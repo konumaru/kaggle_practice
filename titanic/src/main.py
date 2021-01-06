@@ -6,7 +6,7 @@ sys.path.append("../..")
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import StratifiedKFold, KFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 
 from mikasa.common import timer

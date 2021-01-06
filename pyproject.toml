@@ -16,6 +16,7 @@ pytorch-tabnet = "^3.0.0"
 kaggle = "^1.5.10"
 google-cloud-storage = "^1.35.0"
 google-cloud-bigquery = "^2.6.1"
+mlflow = "^1.13.1"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^20.8b1", allow-prereleases = true}
