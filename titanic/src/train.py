@@ -11,82 +11,67 @@ from sklearn.metrics import accuracy_score
 
 from mikasa.common import timer
 from mikasa.io import load_pickle, dump_pickle
+from mikasa.trainer.base import CrossValidationTrainer
 from mikasa.trainer.gbdt import LGBMTrainer, XGBTrainer
 
 
 def run_lgbm_train(X, y):
-    models = []
-    oof = np.zeros(y.shape[0])
     cv = StratifiedKFold(n_splits=5, shuffle=True)
-    for i, (train_idx, valid_idx) in enumerate(cv.split(X, y)):
-        X_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
-        X_valid, y_valid = X.iloc[valid_idx], y.iloc[valid_idx]
+    trainer = LGBMTrainer()
+    cv_trainer = CrossValidationTrainer(cv, trainer)
+    cv_trainer.fit(
+        params={
+            "objective": "binary",
+            "metric": "binary_logloss",
+            "num_leaves": 300,
+            "learning_rate": 0.1,
+            "random_seed": 42,
+            "max_depth": 2,
+            "verbose": -1,
+        },
+        train_params={
+            "verbose_eval": 10,
+            "num_boost_round": 1000,
+            "early_stopping_rounds": 10,
+        },
+        X=X,
+        y=y,
+    )
 
-        trainer = LGBMTrainer()
-        trainer.fit(
-            params={
-                "objective": "binary",
-                "metric": "binary_logloss",
-                "num_leaves": 300,
-                "learning_rate": 0.1,
-                "random_seed": 42,
-                "max_depth": 2,
-                "verbose": -1,
-            },
-            train_params={
-                "verbose_eval": 10,
-                "num_boost_round": 1000,
-                "early_stopping_rounds": 10,
-            },
-            X_train=X_train,
-            y_train=y_train,
-            X_valid=X_valid,
-            y_valid=y_valid,
-            # categorical_feature=["Pclass"],
-        )
-
-        models.append(trainer.get_model())
-        oof[valid_idx] = (trainer.predict(X_valid) > 0.5).astype(int)
+    models = cv_trainer.get_models()
+    oof = (cv_trainer.get_oof() > 0.5).astype(int)
 
     metric = accuracy_score(y, oof)
     return models, metric
 
 
 def run_xgb_train(X, y):
-    models = []
-    oof = np.zeros(y.shape[0])
     cv = StratifiedKFold(n_splits=5, shuffle=True)
-    for i, (train_idx, valid_idx) in enumerate(cv.split(X, y)):
-        X_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
-        X_valid, y_valid = X.iloc[valid_idx], y.iloc[valid_idx]
+    trainer = XGBTrainer()
+    cv_trainer = CrossValidationTrainer(cv, trainer)
+    cv_trainer.fit(
+        params={
+            "objective": "binary:logistic",
+            "metric": "error",
+            "learning_rate": 0.1,
+            "random_seed": 42,
+            "max_depth": 5,
+            "gammma": 0.1,
+            "colsample_bytree": 1,
+            "min_child_weight": 1,
+            "verbose": -1,
+        },
+        train_params={
+            "verbose_eval": 10,
+            "num_boost_round": 500,
+            "early_stopping_rounds": 10,
+        },
+        X=X,
+        y=y,
+    )
 
-        trainer = XGBTrainer()
-        trainer.fit(
-            params={
-                "objective": "binary:logistic",
-                "metric": "error",
-                "learning_rate": 0.1,
-                "random_seed": 42,
-                "max_depth": 5,
-                "gammma": 0.1,
-                "colsample_bytree": 1,
-                "min_child_weight": 1,
-                "verbose": -1,
-            },
-            train_params={
-                "verbose_eval": 10,
-                "num_boost_round": 500,
-                "early_stopping_rounds": 10,
-            },
-            X_train=X_train,
-            y_train=y_train,
-            X_valid=X_valid,
-            y_valid=y_valid,
-            # categorical_feature=["Pclass"],
-        )
-
-        models.append(trainer.get_model())
-        oof[valid_idx] = (trainer.predict(X_valid) > 0.5).astype(int)
+    models = cv_trainer.get_models()
+    oof = (cv_trainer.get_oof() > 0.5).astype(int)
 
     metric = accuracy_score(y, oof)
     return models, metric
