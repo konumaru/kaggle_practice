@@ -11,7 +11,7 @@ from mikasa.common import timer
 from mikasa.io import load_pickle
 
 
-def submission(lgbm_models, xgb_models, data):
+def submission(data, lgbm_models, xgb_models, stack_models):
     def lgbm_predict(models, data):
         preds = [m.predict(data, num_iteration=m.best_iteration) for m in models]
         return np.mean(preds, axis=0)
@@ -24,6 +24,9 @@ def submission(lgbm_models, xgb_models, data):
 
     lgbm_pred = lgbm_predict(lgbm_models, data)
     xgb_pred = xgb_predict(xgb_models, data)
+
+    pred = pd.DataFrame({"lgbm": lgbm_pred, "xgb": xgb_pred})
+    pred = lgbm_predict(stack_models, pred)
 
     pred = 0.5 * lgbm_pred + 0.5 * xgb_pred
     pred = (pred > 0.5).astype(np.int8)
@@ -55,11 +58,12 @@ def main():
 
     lgbm_models = load_pickle("../data/working/lgbm_models.pkl")
     xgb_models = load_pickle("../data/working/xgb_models.pkl")
+    stack_models = load_pickle("../data/working/stack_models.pkl")
 
     print(test.head())
 
     with timer("Submission"):
-        pred = submission(lgbm_models, xgb_models, X_test)
+        pred = submission(X_test, lgbm_models, xgb_models, stack_models)
 
         submit = pd.read_csv("../data/raw/gender_submission.csv")
         submit["Survived"] = pred

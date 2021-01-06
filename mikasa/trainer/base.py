@@ -32,6 +32,28 @@ class BaseTrainer(object):
 
 
 class CrossValidationTrainer(object):
+    """Trainer of Cross Validation.
+
+    Example
+    -------
+    def run_train(Trainer, params, X, y):
+        trainer = Trainer()
+        cv = StratifiedKFold(n_splits=5, shuffle=True)
+        cv_trainer = CrossValidationTrainer(cv, trainer)
+        cv_trainer.fit(
+            params=params,
+            train_params=train_params,
+            X=X,
+            y=y,
+        )
+
+        models = cv_trainer.get_models()
+        oof = (cv_trainer.get_oof() > 0.5).astype(int)
+        return models, oof
+
+    models, oof = run_train(LGBMTrainer, params, train_params, X, y)
+    """
+
     def __init__(self, cv, trainer):
         self.cv = cv
         self.trainer = trainer

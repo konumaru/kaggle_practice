@@ -15,69 +15,61 @@ from mikasa.trainer.base import CrossValidationTrainer
 from mikasa.trainer.gbdt import LGBMTrainer, XGBTrainer
 
 
-def run_lgbm_train(X, y):
+def run_train(Trainer, params, X, y):
+    trainer = Trainer()
     cv = StratifiedKFold(n_splits=5, shuffle=True)
-    trainer = LGBMTrainer()
     cv_trainer = CrossValidationTrainer(cv, trainer)
     cv_trainer.fit(
-        params={
+        params=params["params"],
+        train_params=params["train_params"],
+        X=X,
+        y=y,
+    )
+
+    models = cv_trainer.get_models()
+    oof = (cv_trainer.get_oof() > 0.5).astype(int)
+    return models, oof
+
+
+def main():
+    # TODO: Parameterをhydraで管理する
+    lgbm_params = {
+        "params": {
             "objective": "binary",
             "metric": "binary_logloss",
             "num_leaves": 300,
             "learning_rate": 0.1,
             "random_seed": 42,
             "max_depth": 2,
+            "random_seed": 42,
             "verbose": -1,
         },
-        train_params={
+        "train_params": {
             "verbose_eval": 10,
             "num_boost_round": 1000,
             "early_stopping_rounds": 10,
         },
-        X=X,
-        y=y,
-    )
-
-    models = cv_trainer.get_models()
-    oof = (cv_trainer.get_oof() > 0.5).astype(int)
-
-    metric = accuracy_score(y, oof)
-    return models, metric
-
-
-def run_xgb_train(X, y):
-    cv = StratifiedKFold(n_splits=5, shuffle=True)
-    trainer = XGBTrainer()
-    cv_trainer = CrossValidationTrainer(cv, trainer)
-    cv_trainer.fit(
-        params={
+    }
+    xgb_params = {
+        "params": {
             "objective": "binary:logistic",
-            "metric": "error",
+            "metric": "logloss",
             "learning_rate": 0.1,
             "random_seed": 42,
             "max_depth": 5,
             "gammma": 0.1,
             "colsample_bytree": 1,
             "min_child_weight": 1,
+            "seed": 42,
             "verbose": -1,
         },
-        train_params={
+        "train_params": {
             "verbose_eval": 10,
             "num_boost_round": 500,
             "early_stopping_rounds": 10,
         },
-        X=X,
-        y=y,
-    )
+    }
 
-    models = cv_trainer.get_models()
-    oof = (cv_trainer.get_oof() > 0.5).astype(int)
-
-    metric = accuracy_score(y, oof)
-    return models, metric
-
-
-def main():
     feature_filepath = [
         "../data/feature/raw_feature.pkl",
     ]
@@ -90,14 +82,31 @@ def main():
     y = load_pickle("../data/feature/target.pkl")
 
     with timer("train"):
-        lgbm_models, lgbm_metric = run_lgbm_train(X, y)
-        xgb_models, xgb_metric = run_xgb_train(X, y)
+        lgbm_models, lgbm_oof = run_train(LGBMTrainer, lgbm_params, X, y)
+        xgb_models, xgb_oof = run_train(XGBTrainer, xgb_params, X, y)
 
+    lgbm_metric = accuracy_score(y, (lgbm_oof > 0.5))
+    print(f"AUC of LightGBM is {lgbm_metric:.8f}")
+
+    xgb_metric = accuracy_score(y, (xgb_oof > 0.5))
+    print(f"AUC of XGBoost is {xgb_metric:.8f}")
+
+    ensemble_oof = np.mean([lgbm_oof, xgb_oof], axis=0)
+    ensemble_oof = accuracy_score(y, (ensemble_oof > 0.5))
+    print(f"AUC of Ensemble is {ensemble_oof:.8f}")
+
+    # Stacking
+    X_pred = pd.DataFrame({"lgbm": lgbm_oof, "xgb": xgb_oof})
+    stack_models, stacked_oof = run_train(LGBMTrainer, lgbm_params, X_pred, y)
+    stacked_metric = accuracy_score(y, (stacked_oof > 0.5))
+    print(f"AUC of Stacked LightGBM is {stacked_metric:.8f}")
+    print("")
+
+    # Dump models.
     dump_pickle(lgbm_models, "../data/working/lgbm_models.pkl")
     dump_pickle(xgb_models, "../data/working/xgb_models.pkl")
-
-    print(f"AUC of LightGBM is {lgbm_metric:.8f}")
-    print(f"AUC of XGBoost is {xgb_metric:.8f}")
+    dump_pickle(stack_models, "../data/working/stack_models.pkl")
+    print("")
 
 
 if __name__ == "__main__":
