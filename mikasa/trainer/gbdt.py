@@ -129,7 +129,7 @@ def main():
         X, Y, test_size=0.2, stratify=Y
     )
 
-    trainer = LGBTrainer()
+    trainer = LGBMTrainer()
     trainer.fit({"verbosity": -1}, {}, X_train, y_train, X_valid, y_valid)
     pred = trainer.predict(X_test)
 

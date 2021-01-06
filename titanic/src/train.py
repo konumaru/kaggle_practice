@@ -11,10 +11,10 @@ from sklearn.metrics import accuracy_score
 
 from mikasa.common import timer
 from mikasa.io import load_pickle, dump_pickle
-from mikasa.trainer.gbdt import LGBMTrainer
+from mikasa.trainer.gbdt import LGBMTrainer, XGBTrainer
 
 
-def run_train(X, y):
+def run_lgbm_train(X, y):
     models = []
     oof = np.zeros(y.shape[0])
     cv = StratifiedKFold(n_splits=5, shuffle=True)
@@ -52,6 +52,46 @@ def run_train(X, y):
     return models, metric
 
 
+def run_xgb_train(X, y):
+    models = []
+    oof = np.zeros(y.shape[0])
+    cv = StratifiedKFold(n_splits=5, shuffle=True)
+    for i, (train_idx, valid_idx) in enumerate(cv.split(X, y)):
+        X_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
+        X_valid, y_valid = X.iloc[valid_idx], y.iloc[valid_idx]
+
+        trainer = XGBTrainer()
+        trainer.fit(
+            params={
+                "objective": "binary:logistic",
+                "metric": "error",
+                "learning_rate": 0.1,
+                "random_seed": 42,
+                "max_depth": 5,
+                "gammma": 0.1,
+                "colsample_bytree": 1,
+                "min_child_weight": 1,
+                "verbose": -1,
+            },
+            train_params={
+                "verbose_eval": 10,
+                "num_boost_round": 500,
+                "early_stopping_rounds": 10,
+            },
+            X_train=X_train,
+            y_train=y_train,
+            X_valid=X_valid,
+            y_valid=y_valid,
+            # categorical_feature=["Pclass"],
+        )
+
+        models.append(trainer.get_model())
+        oof[valid_idx] = (trainer.predict(X_valid) > 0.5).astype(int)
+
+    metric = accuracy_score(y, oof)
+    return models, metric
+
+
 def main():
     feature_filepath = [
         "../data/feature/raw_feature.pkl",
@@ -65,10 +105,14 @@ def main():
     y = load_pickle("../data/feature/target.pkl")
 
     with timer("train"):
-        models, metric = run_train(X, y)
+        lgbm_models, lgbm_metric = run_lgbm_train(X, y)
+        xgb_models, xgb_metric = run_xgb_train(X, y)
 
-    dump_pickle(models, "../data/working/lgbm_models.pkl")
-    print(metric)
+    dump_pickle(lgbm_models, "../data/working/lgbm_models.pkl")
+    dump_pickle(xgb_models, "../data/working/xgb_models.pkl")
+
+    print(f"AUC of LightGBM is {lgbm_metric:.8f}")
+    print(f"AUC of XGBoost is {xgb_metric:.8f}")
 
 
 if __name__ == "__main__":

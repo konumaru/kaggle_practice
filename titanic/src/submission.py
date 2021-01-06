@@ -5,17 +5,27 @@ sys.path.append("../..")
 
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 
 from mikasa.common import timer
 from mikasa.io import load_pickle
 
 
-def submission(models, data):
+def submission(lgbm_models, xgb_models, data):
     def lgbm_predict(models, data):
-        preds = [m.predict(data) for m in models]
+        preds = [m.predict(data, num_iteration=m.best_iteration) for m in models]
         return np.mean(preds, axis=0)
 
-    pred = lgbm_predict(models, data)
+    def xgb_predict(models, data):
+        preds = [
+            m.predict(xgb.DMatrix(data), ntree_limit=m.best_ntree_limit) for m in models
+        ]
+        return np.mean(preds, axis=0)
+
+    lgbm_pred = lgbm_predict(lgbm_models, data)
+    xgb_pred = xgb_predict(xgb_models, data)
+
+    pred = 0.5 * lgbm_pred + 0.5 * xgb_pred
     pred = (pred > 0.5).astype(np.int8)
     return pred
 
@@ -44,11 +54,12 @@ def main():
     X_test = create_features(test)
 
     lgbm_models = load_pickle("../data/working/lgbm_models.pkl")
+    xgb_models = load_pickle("../data/working/xgb_models.pkl")
 
     print(test.head())
 
     with timer("Submission"):
-        pred = submission(lgbm_models, X_test)
+        pred = submission(lgbm_models, xgb_models, X_test)
 
         submit = pd.read_csv("../data/raw/gender_submission.csv")
         submit["Survived"] = pred
