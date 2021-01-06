@@ -155,3 +155,8 @@ dmypy.json
 
 # Local History for Visual Studio Code
 .history/
+
+# Pickle file.
+*.pkl
+*.csv
+!*/raw/*.csv

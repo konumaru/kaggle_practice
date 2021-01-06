@@ -16,8 +16,8 @@ def dump_pickle(data, filepath, verbose: bool = True):
         pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def cache_result(filepath, use_cache=True):
-    """Save result decorator.
+def save_cache(filepath, use_cache=False):
+    """Save return dataframe with pickle.
 
     Parameters
     ----------
@@ -25,16 +25,27 @@ def cache_result(filepath, use_cache=True):
         filename, when save with pickle.
     use_cache : bool, optional
         Is use already cash result then pass method process, by default True
+
+    Example
+    -------
+    from mikasa.io import save_cache
+
+    @save_cache("path/to/file.pkl", use_cache=False)
+    def create_feature(data):
+        feature_name = "..."
+        return data[target_name]
     """
 
     def _acept_func(func):
         def run_func(*args, **kwargs):
-            if use_cache and os.path.exists(filepath):
-                print(f"Load Cached data, {filepath}")
-                return load_pickle(filepath)
-            result = func(*args, **kwargs)
+            dst_dir = filepath.rsplit("/", 1)[0]
+            if not os.path.exists(dst_dir):
+                os.makedirs(dst_dir)
 
-            print(f"Cache to {filepath}")
+            if use_cache and os.path.exists(filepath):
+                return load_pickle(filepath)
+
+            result = func(*args, **kwargs)
             dump_pickle(result, filepath)
             return result
 
