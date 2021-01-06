@@ -10,7 +10,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 
 from mikasa.common import timer
-from mikasa.io import load_pickle
+from mikasa.io import load_pickle, dump_pickle
 from mikasa.trainer.gbdt import LGBMTrainer
 
 
@@ -67,6 +67,7 @@ def main():
     with timer("train"):
         models, metric = run_train(X, y)
 
+    dump_pickle(models, "../data/working/lgbm_models.pkl")
     print(metric)
 
 
