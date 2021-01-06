@@ -25,8 +25,9 @@ def submission(data, lgbm_models, xgb_models, stack_models):
     lgbm_pred = lgbm_predict(lgbm_models, data)
     xgb_pred = xgb_predict(xgb_models, data)
 
-    pred = pd.DataFrame({"lgbm": lgbm_pred, "xgb": xgb_pred})
-    pred = lgbm_predict(stack_models, pred)
+    # NOTE: 現状のStackモデルでは過学習している。
+    # pred = pd.DataFrame({"lgbm": lgbm_pred, "xgb": xgb_pred})
+    # pred = lgbm_predict(stack_models, pred)
 
     pred = 0.5 * lgbm_pred + 0.5 * xgb_pred
     pred = (pred > 0.5).astype(np.int8)

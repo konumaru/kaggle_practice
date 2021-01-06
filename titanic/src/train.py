@@ -69,7 +69,24 @@ def main():
             "early_stopping_rounds": 10,
         },
     }
-
+    stack_lgbm_params = {
+        "params": {
+            "objective": "binary",
+            "metric": "binary_logloss",
+            "num_leaves": 100,
+            "learning_rate": 0.1,
+            "random_seed": 42,
+            "max_depth": 2,
+            "random_seed": 42,
+            "verbose": -1,
+        },
+        "train_params": {
+            "verbose_eval": 10,
+            "num_boost_round": 500,
+            "early_stopping_rounds": 10,
+        },
+    }
+    # Load Data
     feature_filepath = [
         "../data/feature/raw_feature.pkl",
     ]
@@ -81,6 +98,7 @@ def main():
     X = pd.concat(data)
     y = load_pickle("../data/feature/target.pkl")
 
+    # Train and Evaluation.
     with timer("train"):
         lgbm_models, lgbm_oof = run_train(LGBMTrainer, lgbm_params, X, y)
         xgb_models, xgb_oof = run_train(XGBTrainer, xgb_params, X, y)
@@ -97,7 +115,7 @@ def main():
 
     # Stacking
     X_pred = pd.DataFrame({"lgbm": lgbm_oof, "xgb": xgb_oof})
-    stack_models, stacked_oof = run_train(LGBMTrainer, lgbm_params, X_pred, y)
+    stack_models, stacked_oof = run_train(LGBMTrainer, stack_lgbm_params, X_pred, y)
     stacked_metric = accuracy_score(y, (stacked_oof > 0.5))
     print(f"AUC of Stacked LightGBM is {stacked_metric:.8f}")
     print("")
