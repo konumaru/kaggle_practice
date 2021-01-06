@@ -14,6 +14,7 @@ dump_dir = "../data/feature/"
 @save_cache(os.path.join(dump_dir, "target.pkl"), use_cache=False)
 def extract_target(data):
     target_name = "Survived"
+    return data[target_name]
 
 
 @save_cache(os.path.join(dump_dir, "raw_feature.pkl"), use_cache=False)
@@ -29,6 +30,8 @@ def extract_raw_feature(data):
     cabin_uniques = load_pickle("../data/preprocess/cabin_uniques.pkl", verbose=False)
     data["Cabin"] = data["Cabin"].map({u: i for i, u in enumerate(cabin_uniques)})
 
+    # Drop columns
+    data.drop(["Survived", "PassengerId", "Name"], axis=1, inplace=True)
     return data
 
 

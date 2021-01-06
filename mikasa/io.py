@@ -4,14 +4,14 @@ import pickle
 
 def load_pickle(filepath, verbose: bool = True):
     if verbose:
-        print(f"Load pickle from {filepath}.")
+        print(f"Load pickle from {filepath}")
     with open(filepath, "rb") as file:
         return pickle.load(file)
 
 
 def dump_pickle(data, filepath, verbose: bool = True):
     if verbose:
-        print(f"Dump pickle to {filepath}.")
+        print(f"Dump pickle to {filepath}")
     with open(filepath, "wb") as file:
         pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
