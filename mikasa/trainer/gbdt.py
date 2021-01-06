@@ -54,7 +54,7 @@ class XGBTrainer(BaseTrainer):
         return self.model
 
 
-class LGBTrainer(BaseTrainer):
+class LGBMTrainer(BaseTrainer):
     def __init__(self):
         self.model = None
 
