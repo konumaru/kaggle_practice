@@ -63,7 +63,7 @@ def run_train(X, y):
 def submission(models, data):
     def lgbm_predict(models, data):
         preds = [m.predict(data) for m in models]
-        return np.mean(preds)
+        return np.mean(preds, axis=0)
 
     pred = lgbm_predict(models, data)
     pred = (pred > 0.5).astype(np.int8)
@@ -93,7 +93,7 @@ def main():
     test = pd.read_csv("../data/raw/test.csv")
     submit = test[["PassengerId"]].copy()
     submit["Survived"] = pred
-    submit.to_csv("submission.csv", index=False)
+    submit.to_csv("../data/submit/submission.csv", index=False)
     print(submit.head())
 
 
