@@ -13,6 +13,14 @@ python-editor = ">=0.3"
 SQLAlchemy = ">=1.1.0"
 
 [[package]]
+name = "antlr4-python3-runtime"
+version = "4.8"
+description = "ANTLR 4.8 runtime for Python 3.7"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "anyio"
 version = "2.0.2"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -542,6 +550,18 @@ eventlet = ["eventlet (>=0.9.7)"]
 gevent = ["gevent (>=0.13)"]
 setproctitle = ["setproctitle"]
 tornado = ["tornado (>=0.2)"]
+
+[[package]]
+name = "hydra-core"
+version = "1.0.5"
+description = "A framework for elegantly configuring complex applications"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+antlr4-python3-runtime = "4.8"
+omegaconf = ">=2.0.5,<2.1"
 
 [[package]]
 name = "idna"
@@ -1089,6 +1109,18 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 rsa = ["cryptography"]
 signals = ["blinker"]
 signedtoken = ["cryptography", "pyjwt (>=1.0.0)"]
+
+[[package]]
+name = "omegaconf"
+version = "2.0.5"
+description = "A flexible configuration library"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+PyYAML = ">=5.1"
+typing-extensions = "*"
 
 [[package]]
 name = "packaging"
@@ -1774,11 +1806,14 @@ scikit-learn = ["scikit-learn"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "5d0638611c97ce3d8289485a7c6b5c1f75bf8b48ed01d8716d558666545569b2"
+content-hash = "a66920ae94ade685193ef0226e6012e1c5b22938df0d9edf0b171391290553c1"
 
 [metadata.files]
 alembic = [
     {file = "alembic-1.4.1.tar.gz", hash = "sha256:791a5686953c4b366d3228c5377196db2f534475bb38d26f70eb69668efd9028"},
+]
+antlr4-python3-runtime = [
+    {file = "antlr4-python3-runtime-4.8.tar.gz", hash = "sha256:15793f5d0512a372b4e7d2284058ad32ce7dd27126b105fb0b2245130445db33"},
 ]
 anyio = [
     {file = "anyio-2.0.2-py3-none-any.whl", hash = "sha256:01cce0087b8fd8b6b7e629dc11505dcde02f916ce903332892cb2ae9817b597d"},
@@ -2077,6 +2112,10 @@ gunicorn = [
     {file = "gunicorn-20.0.4-py2.py3-none-any.whl", hash = "sha256:cd4a810dd51bf497552cf3f863b575dabd73d6ad6a91075b65936b151cbf4f9c"},
     {file = "gunicorn-20.0.4.tar.gz", hash = "sha256:1904bb2b8a43658807108d59c3f3d56c2b6121a701161de0ddf9ad140073c626"},
 ]
+hydra-core = [
+    {file = "hydra-core-1.0.5.tar.gz", hash = "sha256:059dad5587267317176539e5d5a5ee77f7970b45bf50311018f7ea7e3a90dac5"},
+    {file = "hydra_core-1.0.5-py3-none-any.whl", hash = "sha256:e0fdfe35bd2b899699482afaab7ee45ddd0c3a4e749e2983958a42d10bdcc343"},
+]
 idna = [
     {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},
     {file = "idna-2.10.tar.gz", hash = "sha256:b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6"},
@@ -2333,6 +2372,10 @@ numpy = [
 oauthlib = [
     {file = "oauthlib-3.1.0-py2.py3-none-any.whl", hash = "sha256:df884cd6cbe20e32633f1db1072e9356f53638e4361bef4e8b03c9127c9328ea"},
     {file = "oauthlib-3.1.0.tar.gz", hash = "sha256:bee41cc35fcca6e988463cacc3bcb8a96224f470ca547e697b604cc697b2f889"},
+]
+omegaconf = [
+    {file = "omegaconf-2.0.5-py3-none-any.whl", hash = "sha256:d1a39f93e06b33ed7033311006d41bdc7a92e6c484c09327f4dc6bdcbbfe8a8e"},
+    {file = "omegaconf-2.0.5.tar.gz", hash = "sha256:be2378999380395d51eedb39cfcc03d967971d9baa99d1c36f8527b09ea72709"},
 ]
 packaging = [
     {file = "packaging-20.8-py2.py3-none-any.whl", hash = "sha256:24e0da08660a87484d1602c30bb4902d74816b6985b93de36926f5bc95741858"},

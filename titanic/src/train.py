@@ -9,6 +9,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 
+import config
 from mikasa.common import timer
 from mikasa.io import load_pickle, dump_pickle
 from mikasa.trainer.base import CrossValidationTrainer
@@ -31,67 +32,29 @@ def run_train(Trainer, params, X, y):
     return models, oof
 
 
+def load_target():
+    y = load_pickle("../data/feature/target.pkl")
+    return y
+
+
 def main():
-    # TODO: Parameterをhydraで管理する
     lgbm_params = {
-        "params": {
-            "objective": "binary",
-            "metric": "binary_logloss",
-            "num_leaves": 300,
-            "learning_rate": 0.1,
-            "random_seed": 42,
-            "max_depth": 2,
-            "random_seed": 42,
-            "verbose": -1,
-        },
-        "train_params": {
-            "verbose_eval": 10,
-            "num_boost_round": 1000,
-            "early_stopping_rounds": 10,
-        },
+        "params": config.LightgbmParams.params,
+        "train_params": config.LightgbmParams.train_params,
     }
     xgb_params = {
-        "params": {
-            "objective": "binary:logistic",
-            "metric": "logloss",
-            "learning_rate": 0.1,
-            "random_seed": 42,
-            "max_depth": 5,
-            "gammma": 0.1,
-            "colsample_bytree": 1,
-            "min_child_weight": 1,
-            "seed": 42,
-            "verbose": -1,
-        },
-        "train_params": {
-            "verbose_eval": 10,
-            "num_boost_round": 500,
-            "early_stopping_rounds": 10,
-        },
+        "params": config.XGBoostPrams.params,
+        "train_params": config.XGBoostPrams.train_params,
     }
     stack_lgbm_params = {
-        "params": {
-            "objective": "binary",
-            "metric": "binary_logloss",
-            "num_leaves": 100,
-            "learning_rate": 0.1,
-            "random_seed": 42,
-            "max_depth": 2,
-            "random_seed": 42,
-            "verbose": -1,
-        },
-        "train_params": {
-            "verbose_eval": 10,
-            "num_boost_round": 500,
-            "early_stopping_rounds": 10,
-        },
+        "params": config.StackLightgbmParams.params,
+        "train_params": config.StackLightgbmParams.train_params,
     }
     # Load Data
-    feature_filepath = [
-        "../data/feature/raw_feature.pkl",
-    ]
+    feature_files = config.FeatureList.features
+    feature_files = [f"../data/feature/{filename}" for filename in feature_files]
     data = []
-    for filepath in feature_filepath:
+    for filepath in feature_files:
         feature = load_pickle(filepath)
         data.append(feature)
 
