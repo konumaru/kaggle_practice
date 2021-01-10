@@ -1,0 +1,1 @@
+{'verbose_eval': 10, 'num_boost_round': 500, 'early_stopping_rounds': 10}

@@ -1,0 +1,4 @@
+artifact_location: file:///Users/rui/Documents/repositories/kaggle_practice/titanic/src/mlruns/1
+experiment_id: '1'
+lifecycle_stage: active
+name: LightGBM+XGboost_StackedLightGBM

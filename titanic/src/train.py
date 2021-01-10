@@ -14,11 +14,27 @@ from mikasa.common import timer
 from mikasa.io import load_pickle, dump_pickle
 from mikasa.trainer.base import CrossValidationTrainer
 from mikasa.trainer.gbdt import LGBMTrainer, XGBTrainer
+from mikasa.mlflow_writer import MlflowWriter
+
+
+def load_feature(feature_files):
+    feature_files = [f"../data/feature/{filename}" for filename in feature_files]
+    data = []
+    for filepath in feature_files:
+        feature = load_pickle(filepath)
+        data.append(feature)
+    feature = pd.concat(data)
+    return feature
+
+
+def load_target():
+    y = load_pickle("../data/feature/target.pkl")
+    return y
 
 
 def run_train(Trainer, params, X, y):
     trainer = Trainer()
-    cv = StratifiedKFold(n_splits=5, shuffle=True)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     cv_trainer = CrossValidationTrainer(cv, trainer)
     cv_trainer.fit(
         params=params["params"],
@@ -32,12 +48,12 @@ def run_train(Trainer, params, X, y):
     return models, oof
 
 
-def load_target():
-    y = load_pickle("../data/feature/target.pkl")
-    return y
-
-
 def main():
+    # Load Data
+    feature_files = config.FeatureList.features
+    X = load_feature(feature_files)
+    y = load_pickle("../data/feature/target.pkl")
+    # Set model parameters.
     lgbm_params = {
         "params": config.LightgbmParams.params,
         "train_params": config.LightgbmParams.train_params,
@@ -50,17 +66,6 @@ def main():
         "params": config.StackLightgbmParams.params,
         "train_params": config.StackLightgbmParams.train_params,
     }
-    # Load Data
-    feature_files = config.FeatureList.features
-    feature_files = [f"../data/feature/{filename}" for filename in feature_files]
-    data = []
-    for filepath in feature_files:
-        feature = load_pickle(filepath)
-        data.append(feature)
-
-    X = pd.concat(data)
-    y = load_pickle("../data/feature/target.pkl")
-
     # Train and Evaluation.
     with timer("train"):
         lgbm_models, lgbm_oof = run_train(LGBMTrainer, lgbm_params, X, y)
@@ -88,6 +93,20 @@ def main():
     dump_pickle(xgb_models, "../data/working/xgb_models.pkl")
     dump_pickle(stack_models, "../data/working/stack_models.pkl")
     print("")
+    # Domp to mlflow.
+    experiment_name = "LightGBM+XGboost_StackedLightGBM"
+    writer = MlflowWriter(experiment_name)
+    writer.log_param("lgbm_", lgbm_params)
+    writer.log_param("xgb_", xgb_params)
+    writer.log_param("stack_lgbm_", stack_lgbm_params)
+    writer.log_param("feature", ", ".join(feature_files))
+    writer.log_metric("lgbm_auc", lgbm_metric)
+    writer.log_metric("xgb_metric", xgb_metric)
+    writer.log_metric("ensemble_auc", ensemble_oof)
+    writer.log_metric("stacked_auc", stacked_metric)
+    writer.log_artifact("../data/working/lgbm_models.pkl")
+    writer.log_artifact("../data/working/xgb_models.pkl")
+    writer.log_artifact("../data/working/stack_models.pkl")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/rui/Documents/repositories/kaggle_practice/titanic/src/mlruns/1/b728d25d90084f41b82f99b03c61ce0a/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+name: ''
+run_id: b728d25d90084f41b82f99b03c61ce0a
+run_uuid: b728d25d90084f41b82f99b03c61ce0a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1610261675179
+status: 1
+tags: []
+user_id: unknown

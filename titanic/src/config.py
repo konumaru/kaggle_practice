@@ -24,15 +24,11 @@ class LightgbmParams:
 class XGBoostPrams:
     params = {
         "objective": "binary:logistic",
-        "metric": "logloss",
         "learning_rate": 0.1,
-        "random_seed": 42,
         "max_depth": 5,
-        "gammma": 0.1,
         "colsample_bytree": 1,
         "min_child_weight": 1,
         "seed": 42,
-        "verbose": -1,
     }
     train_params = {
         "verbose_eval": 10,
