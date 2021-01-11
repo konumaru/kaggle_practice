@@ -1,0 +1,1 @@
+0.4 * lgbm_oof + 0.6 * xgb_oof

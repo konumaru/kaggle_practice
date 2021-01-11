@@ -6,7 +6,7 @@ sys.path.append("../..")
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, RepeatedStratifiedKFold
 from sklearn.metrics import accuracy_score
 
 import config
@@ -42,7 +42,7 @@ def main():
 
     lgbm_metric = accuracy_score(y, (lgbm_oof > 0.5))
     xgb_metric = accuracy_score(y, (xgb_oof > 0.5))
-    ensemble_oof = np.mean([lgbm_oof, xgb_oof], axis=0)
+    ensemble_oof = 0.5 * lgbm_oof + 0.5 * xgb_oof
     ensemble_metric = accuracy_score(y, (ensemble_oof > 0.5))
     # Stacking
     X_pred = pd.DataFrame({"lgbm": lgbm_oof, "xgb": xgb_oof})
@@ -80,7 +80,6 @@ def load_feature(feature_files):
         feature = load_pickle(filepath)
         data.append(feature)
     feature = pd.concat(data, axis=1)
-    print(feature.columns)
     return feature
 
 
@@ -91,7 +90,8 @@ def load_target():
 
 def run_train(Trainer, params, X, y):
     trainer = Trainer()
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    # cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)
     cv_trainer = CrossValidationTrainer(cv, trainer)
     cv_trainer.fit(
         params=params["params"],

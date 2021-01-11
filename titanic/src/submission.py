@@ -35,22 +35,85 @@ def submission(data, lgbm_models, xgb_models, stack_models):
 
 
 def create_features(data):
-    # === extract_raw_feature ===
+    # === family_feature ===
+    data["family_size"] = data["SibSp"] + data["Parch"] + 1
+    data["is_group_guest"] = np.where(data["family_size"] >= 1, 1, 0)
+    # === ticket_type ===
+    data["ticket_type"] = data["Ticket"].apply(lambda x: x[0:3])
+    cabin_uniques = load_pickle(
+        "../data/preprocess/ticketType_uniques.pkl", verbose=False
+    )
+    data["ticket_type"] = data["ticket_type"].map(
+        {u: i for i, u in enumerate(cabin_uniques)}
+    )
+    # === fare_rank ===
+    data["Fare_rank"] = -1
+    data.loc[data["Fare"] <= 7.91, "Fare_rank"] = 0
+    data.loc[(data["Fare"] > 7.91) & (data["Fare"] <= 14.454), "Fare_rank"] = 1
+    data.loc[(data["Fare"] > 14.454) & (data["Fare"] <= 31), "Fare_rank"] = 2
+    data.loc[data["Fare"] > 31, "Fare_rank"] = 3
+    data["Fare_rank"] = data["Fare_rank"].astype(int)
+    data["FareRank_Pclass"] = data["Fare_rank"] * data["Pclass"]
+    # === age_rank ===
+    data["Age_rank"] = -1
+    data.loc[data["Age"] <= 16, "Age_rank"] = 0
+    data.loc[(data["Age"] > 16) & (data["Age"] <= 32), "Age_rank"] = 1
+    data.loc[(data["Age"] > 32) & (data["Age"] <= 48), "Age_rank"] = 2
+    data.loc[(data["Age"] > 48) & (data["Age"] <= 64), "Age_rank"] = 3
+    data.loc[data["Age"] > 64, "Age_rank"] = 4
+    data["Age_rank"] = data["Age_rank"].astype(int)
+    data["AgeRank_Pclass"] = data["Age_rank"] * data["Pclass"]
+    # === name_feature ===
+    data["Title"] = data["Name"].str.extract(" ([A-Za-z]+)\.", expand=False)
+    data["Title"] = data["Title"].replace(
+        [
+            "Lady",
+            "Countess",
+            "Capt",
+            "Col",
+            "Don",
+            "Dr",
+            "Major",
+            "Rev",
+            "Sir",
+            "Jonkheer",
+            "Dona",
+        ],
+        "Rare",
+    )
+
+    data["Title"] = data["Title"].replace("Mlle", "Miss")
+    data["Title"] = data["Title"].replace("Ms", "Miss")
+    data["Title"] = data["Title"].replace("Mme", "Mrs")
+    # Fill null Age by honorific
+    honorific_avgAge = [
+        ("Mr.", 32),
+        ("Miss.", 21),
+        ("Mrs.", 36),
+        ("Master.", 5),
+        ("Rare", 45),
+    ]
+    for t, val in honorific_avgAge:
+        t_idx = data["Title"].str.contains(t)
+        data["Age"][t_idx].fillna(val, inplace=True)
+    honorific_avgFare = [
+        ("Mr.", 9),
+        ("Miss.", 15),
+        ("Mrs.", 26),
+        ("Master.", 26),
+        ("Rare", 28),
+    ]
+    for t, val in honorific_avgAge:
+        t_idx = data["Title"].str.contains(t)
+        data["Fare"][t_idx].fillna(val, inplace=True)
+
+    title_mapping = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5}
+    data["Title"] = data["Title"].map(title_mapping)
+    # === raw_feature ===
     # Fill null values.
-    # [
-    #     "Pclass",
-    #     "Sex",
-    #     "Age",
-    #     "SibSp",
-    #     "Parch",
-    #     "Ticket",
-    #     "Fare",
-    #     "Cabin",
-    #     "Embarked",
-    #     "family_size",
-    #     "is_group_guest",
-    # ]
     data["Embarked"].fillna("missing", inplace=True)
+    # string feature
+    data["Has_Cabin"] = data["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
 
     # Label encoding.
     data["Sex"] = data["Sex"].map({"female": 0, "male": 1})
@@ -60,22 +123,30 @@ def create_features(data):
     cabin_uniques = load_pickle("../data/preprocess/cabin_uniques.pkl", verbose=False)
     data["Cabin"] = data["Cabin"].map({u: i for i, u in enumerate(cabin_uniques)})
 
-    # Fill null Age by honorific
-    honorific_avgAge = [("Mr.", 32), ("Miss.", 21), ("Mrs.", 37), ("Mr.", 5)]
-    for t, val in honorific_avgAge:
-        t_idx = data["Name"].str.contains(t)
-        data["Age"][t_idx].fillna(val, inplace=True)
-    honorific_avgFare = [("Mr.", 24), ("Miss.", 42), ("Mrs.", 49), ("Mr.", 36)]
-    for t, val in honorific_avgAge:
-        t_idx = data["Name"].str.contains(t)
-        data["Fare"][t_idx].fillna(val, inplace=True)
-    # Honorific features
-    data["family_size"] = data["SibSp"] + data["Parch"] + 1
-    data["is_group_guest"] = np.where(data["family_size"] >= 1, 1, 0)
-
     # Drop columns
     data.drop(["Survived", "PassengerId", "Name"], axis=1, inplace=True)
-    print(data.columns)
+    data = data[
+        [
+            "Pclass",
+            "Sex",
+            "Age",
+            "SibSp",
+            "Parch",
+            "Ticket",
+            "Fare",
+            "Cabin",
+            "Embarked",
+            "Has_Cabin",
+            "family_size",
+            "is_group_guest",
+            "ticket_type",
+            "Fare_rank",
+            "FareRank_Pclass",
+            "Age_rank",
+            "AgeRank_Pclass",
+            "Title",
+        ]
+    ]
     return data
 
 
