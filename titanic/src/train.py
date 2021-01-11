@@ -56,7 +56,9 @@ def main():
     print(f"Ensemble Metric is {ensemble_metric}")
     # Domp to mlflow.
     if config.DEBUG is not True:
-        writer = MlflowWriter(config.MLflowConfig.experiment_name)
+        writer = MlflowWriter(
+            config.MLflowConfig.experiment_name, tracking_uri="../mlruns"
+        )
         writer.set_run_name(config.MLflowConfig.run_name)
         writer.set_note_content(config.MLflowConfig.experiment_note)
         writer.log_param("lgbm_params", lgbm_params)
@@ -90,8 +92,8 @@ def load_target():
 
 def run_train(Trainer, params, X, y):
     trainer = Trainer()
-    # cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    # cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)
     cv_trainer = CrossValidationTrainer(cv, trainer)
     cv_trainer.fit(
         params=params["params"],
