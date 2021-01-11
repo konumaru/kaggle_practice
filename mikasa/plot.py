@@ -1,4 +1,4 @@
-import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn import metrics
@@ -7,20 +7,18 @@ from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from .common import load_pickle, dump_pickle
 
 plt.style.use("seaborn-darkgrid")
 
 
-def plot_importance(filepath, y, data, xerr=None, figsize=(10, 15)):
+def plot_importance(y, data, xerr=None, figsize=(10, 15)):
     # Plot Importance DataFrame.
-    plt.figure(figsize=figsize)
-    plt.title("Feature importance")
-    plt.barh(y, width=data, xerr=xerr, label="importance")
-    plt.tight_layout()
-    plt.legend(loc="lower right")
-    plt.savefig(filepath)
-    plt.close("all")
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.barh(y, width=data, xerr=xerr, label="importance")
+    ax.legend(loc="lower right")
+    fig.suptitle("Feature importance")
+    fig.tight_layout()
+    return fig
 
 
 def plot_roc_curve(y_true, y_score, filepath, figsize=(7, 6)):
@@ -124,4 +122,4 @@ def plot_confusion_matrix(
                 color="white" if cm[i, j] > thresh else "black",
             )
     fig.tight_layout()
-    return ax
+    return fig

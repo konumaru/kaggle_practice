@@ -48,5 +48,8 @@ class MlflowWriter(object):
     def log_artifact(self, local_path):
         self.client.log_artifact(self.run_id, local_path)
 
+    def log_figure(self, figure, artifact_file):
+        self.client.log_figure(self.run_id, figure, artifact_file)
+
     def set_terminated(self):
         self.client.set_terminated(self.run_id)

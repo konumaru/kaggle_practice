@@ -9,8 +9,7 @@ class MLflowConfig:
     experiment_name = "LightGBM+XGboost_StackedLightGBM"
     run_name = "Weighted Ensemble Model"
     experiment_note = """
-    Only simple raw data features.
-    Weighted Ensemble by LR, RF, LGBM, XGB.ml
+    Save feature importance.
     """
 
 

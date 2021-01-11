@@ -6,6 +6,8 @@ sys.path.append("../..")
 import numpy as np
 import pandas as pd
 
+import matplotlib.pyplot as plt
+
 from sklearn.model_selection import StratifiedKFold, RepeatedStratifiedKFold
 from sklearn.metrics import accuracy_score
 
@@ -16,6 +18,7 @@ from mikasa.trainer.base import SklearnClassificationTrainer
 from mikasa.trainer.base import CrossValidationTrainer
 from mikasa.trainer.gbdt import LGBMTrainer, XGBTrainer
 from mikasa.ensemble import SimpleAgerageEnsember, ManualWeightedEnsember
+from mikasa.plot import plot_importance
 from mikasa.mlflow_writer import MlflowWriter
 
 
@@ -30,23 +33,23 @@ def main():
     # >>>>> Fit Trainers.
     # Logistic Regression
     lr_trainer = SklearnClassificationTrainer(config.LogisticRegressionParams.model)
-    lr_models, lr_oof = run_train(lr_trainer, X, y)
+    lr_models, lr_oof, _ = run_train(lr_trainer, X, y)
     lr_accuracy = accuracy_score(y, (lr_oof > 0.5))
     # Rndom Forest
     rf_trainer = SklearnClassificationTrainer(config.RandomForestParams.model)
-    rf_models, rf_oof = run_train(rf_trainer, X, y)
+    rf_models, rf_oof, _ = run_train(rf_trainer, X, y)
     rf_accuracy = accuracy_score(y, (rf_oof > 0.5))
     # LightGBM
     lgbm_trainer = LGBMTrainer(
         config.LightgbmParams.params, config.LightgbmParams.train_params
     )
-    lgbm_models, lgbm_oof = run_train(lgbm_trainer, X, y)
+    lgbm_models, lgbm_oof, lgbm_importance_fig = run_train(lgbm_trainer, X, y)
     lgbm_accuracy = accuracy_score(y, (lgbm_oof > 0.5))
     # XGBoost
     xgb_trainer = XGBTrainer(
         config.XGBoostPrams.params, config.XGBoostPrams.train_params
     )
-    xgb_models, xgb_oof = run_train(xgb_trainer, X, y)
+    xgb_models, xgb_oof, xgb_importance_fig = run_train(xgb_trainer, X, y)
     xgb_accuracy = accuracy_score(y, (xgb_oof > 0.5))
 
     # >>>>> Print Metric.
@@ -106,6 +109,7 @@ def main():
         )
         writer.log_metric("LGBM_Accuracy", lgbm_accuracy)
         writer.log_artifact("../data/working/lgbm_models.pkl")
+        writer.log_figure(lgbm_importance_fig, "lgbm_importance.png")
         # XGBoost
         writer.log_param(
             "XGB_params",
@@ -116,6 +120,7 @@ def main():
         )
         writer.log_metric("XGB_Accuracy", xgb_accuracy)
         writer.log_artifact("../data/working/xgb_models.pkl")
+        writer.log_figure(xgb_importance_fig, "xgb_importance.png")
         # Ensemble
         writer.log_metric("Ensemble_Accuracy", ensemble_accuracy)
         # Close writer client.
@@ -142,8 +147,18 @@ def run_train(Trainer, X, y, params=None, train_params=None):
     )
     models = cv_trainer.get_models()
     oof = cv_trainer.get_oof()
-    return models, oof
+
+    if "Sklearn" not in Trainer.__class__.__name__:
+        (name, mean_importance, std_importance) = cv_trainer.get_importance(
+            max_feature=50
+        )
+        importance_fig = plot_importance(name, mean_importance, std_importance)
+    else:
+        importance_fig = plt.figure()
+
+    return models, oof, importance_fig
 
 
 if __name__ == "__main__":
-    main()
+    with timer("Train"):
+        main()
