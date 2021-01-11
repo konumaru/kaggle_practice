@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from mikasa.io import save_cache, load_pickle, dump_pickle
+from mikasa.preprocessing import add_dummies
 
 dump_dir = "../data/feature/"
 
@@ -21,23 +22,20 @@ def target():
 @save_cache(os.path.join(dump_dir, "raw_feature.pkl"), use_cache=False)
 def raw_feature():
     data = pd.read_csv("../data/raw/train.csv")
-    # Fill null values.
-    data["Embarked"].fillna("missing", inplace=True)
-    # string feature
-    data["Has_Cabin"] = data["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
-
     # Label encoding.
     data["Sex"] = data["Sex"].map({"female": 0, "male": 1})
-    data["Embarked"] = data["Embarked"].map({"C": 0, "Q": 1, "S": 2, "missing": 3})
-    ticket_uniques = load_pickle("../data/preprocess/ticket_uniques.pkl", verbose=False)
-    data["Ticket"] = data["Ticket"].map({u: i for i, u in enumerate(ticket_uniques)})
-    cabin_uniques = load_pickle("../data/preprocess/cabin_uniques.pkl", verbose=False)
-    data["Cabin"] = data["Cabin"].map({u: i for i, u in enumerate(cabin_uniques)})
+    # One-hot encoding
+    data = add_dummies(data, "Pclass")
+    data["Embarked"].fillna("missing", inplace=True)
+    data = add_dummies(data, "Embarked")
+    # Fill null with average.
+    data["Age"].fillna(30, inplace=True)
+    data["Fare"].fillna(33, inplace=True)
 
-    # Drop columns
-    data.drop(["Survived", "PassengerId", "Name"], axis=1, inplace=True)
-    print(data.head())
-    return data
+    use_cols = ["Sex", "SibSp", "Parch", "Age", "Fare"]
+    use_cols += list(data.columns[data.columns.str.contains("Pclass")])
+    use_cols += list(data.columns[data.columns.str.contains("Embarked")])
+    return data[use_cols]
 
 
 @save_cache(os.path.join(dump_dir, "family_group.pkl"), use_cache=False)
@@ -156,22 +154,14 @@ def create_features():
     target()
     # Features
     raw_feature()
-    family_feature()
-    ticket_type()
-    fare_rank()
-    age_rank()
-    name_feature()
+    # family_feature()
+    # ticket_type()
+    # fare_rank()
+    # age_rank()
+    # name_feature()
 
 
 def main():
-    train = pd.read_csv("../data/raw/train.csv")
-    # Dump unique values.
-    ticket_uniques = train["Ticket"].fillna("missing").to_numpy()
-    dump_pickle(ticket_uniques, "../data/preprocess/ticket_uniques.pkl", verbose=False)
-
-    cabin_uniques = train["Cabin"].fillna("missing").to_numpy()
-    dump_pickle(cabin_uniques, "../data/preprocess/cabin_uniques.pkl", verbose=False)
-
     create_features()
 
 

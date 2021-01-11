@@ -31,6 +31,28 @@ class BaseTrainer(object):
         NotImplementedError
 
 
+class SklearnTrainer(BaseTrainer):
+    def __init__(self, model):
+        self.model = model
+
+    def fit(
+        self,
+        X: pd.DataFrame,
+        y: pd.DataFrame,
+        weight: pd.DataFrame = None,
+    ):
+        self.model.fit(X, y, sample_weight=weight)
+
+    def predict(self, data):
+        return self.model.predict_proba(data)[:, 1]
+
+    def get_importance(self):
+        NotImplementedError
+
+    def get_model(self):
+        return self.model
+
+
 class CrossValidationTrainer(object):
     """Trainer of Cross Validation.
 
@@ -68,15 +90,19 @@ class CrossValidationTrainer(object):
             X_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
             X_valid, y_valid = X.iloc[valid_idx], y.iloc[valid_idx]
 
-            _trainer = copy.deepcopy(self.trainer)
-            _trainer.fit(
-                params=params,
-                train_params=train_params,
-                X_train=X_train,
-                y_train=y_train,
-                X_valid=X_valid,
-                y_valid=y_valid,
-            )
+            if self.trainer.__class__.__name__ == "SklearnTrainer":
+                _trainer = copy.deepcopy(self.trainer)
+                _trainer.fit(X_train, y_train)
+            else:
+                _trainer = copy.deepcopy(self.trainer)
+                _trainer.fit(
+                    params=params,
+                    train_params=train_params,
+                    X_train=X_train,
+                    y_train=y_train,
+                    X_valid=X_valid,
+                    y_valid=y_valid,
+                )
 
             self.trainers.append(_trainer)
             self.oof[valid_idx] = _trainer.predict(X_valid)

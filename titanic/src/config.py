@@ -1,4 +1,8 @@
-DEBUG = False
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
+
+DEBUG = True
 
 
 class MLflowConfig:
@@ -11,12 +15,37 @@ class MLflowConfig:
 class FeatureList:
     features = [
         "raw_feature",
-        "family_group",
-        "ticket_type",
-        "fare_rank",
-        "age_rank",
-        "name_feature",
     ]
+
+
+class LogisticParams:
+    params = {
+        "penalty": "l2",
+        "C": 1.0,
+        "class_weight": None,
+        "random_state": 42,
+        "solver": "lbfgs",
+        "max_iter": 500,
+        "warm_start": False,
+        "n_jobs": -1,
+    }
+    model = LogisticRegression(**params)
+
+
+class RandomForestParams:
+    params = {
+        "n_estimators": 100,
+        "criterion": "gini",
+        "max_depth": 5,
+        "max_samples": 0.8,
+        "min_samples_split": 10,
+        "min_samples_leaf": 10,
+        "random_state": 42,
+        "warm_start": False,
+        "class_weight": None,  # balanced, balanced_subsample
+        "n_jobs": -1,
+    }
+    model = RandomForestClassifier(**params)
 
 
 class LightgbmParams:
