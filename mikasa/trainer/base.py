@@ -42,12 +42,22 @@ class SklearnClassificationTrainer(BaseTrainer):
         weight: pd.DataFrame = None,
     ):
         self.model.fit(X, y, sample_weight=weight)
+        self.feature_names_ = X.columns
 
     def predict(self, data):
         return self.model.predict_proba(data)[:, 1]
 
     def get_importance(self):
-        NotImplementedError
+        """Return feature importance.
+
+        Returns
+        -------
+        dict :
+            Dictionary of feature name, feature importance.
+        """
+        importance = self.model.ffeature_importances_
+        feature_name = self.feature_names_
+        return dict(zip(feature_name, importance))
 
     def get_model(self):
         return self.model

@@ -6,7 +6,7 @@ DEBUG = False
 
 
 class MLflowConfig:
-    experiment_name = "LightGBM+XGboost_StackedLightGBM"
+    experiment_name = "TestExperiment"
     run_name = "Weighted Ensemble Model"
     experiment_note = """
     Save feature importance.

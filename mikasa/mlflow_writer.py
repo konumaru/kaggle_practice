@@ -19,7 +19,9 @@ class MlflowWriter(object):
                 experiment_name
             ).experiment_id
         else:
-            experiment_id = self.client.create_experiment(experiment_name)
+            experiment_id = self.client.create_experiment(
+                experiment_name,
+            )
         return experiment_id
 
     def get_list_experiment_names(self):

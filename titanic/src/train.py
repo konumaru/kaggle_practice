@@ -110,6 +110,7 @@ def main():
         writer.log_metric("LGBM_Accuracy", lgbm_accuracy)
         writer.log_artifact("../data/working/lgbm_models.pkl")
         writer.log_figure(lgbm_importance_fig, "lgbm_importance.png")
+        lgbm_importance_fig.savefig("../data/working/lgbm_importance.png")
         # XGBoost
         writer.log_param(
             "XGB_params",
@@ -121,6 +122,7 @@ def main():
         writer.log_metric("XGB_Accuracy", xgb_accuracy)
         writer.log_artifact("../data/working/xgb_models.pkl")
         writer.log_figure(xgb_importance_fig, "xgb_importance.png")
+        xgb_importance_fig.savefig("../data/working/xgb_importance.png")
         # Ensemble
         writer.log_metric("Ensemble_Accuracy", ensemble_accuracy)
         # Close writer client.

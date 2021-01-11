@@ -105,7 +105,6 @@ class LGBMTrainer(BaseTrainer):
             importance_type="gain", iteration=self.model.best_iteration
         )
         feature_name = self.model.feature_name()
-
         return dict(zip(feature_name, importance))
 
     def get_model(self):
