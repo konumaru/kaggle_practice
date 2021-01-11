@@ -10,13 +10,13 @@ from .base import BaseTrainer
 
 
 class XGBTrainer(BaseTrainer):
-    def __init__(self):
+    def __init__(self, params, train_params):
         self.model = None
+        self.params = params
+        self.train_params = train_params
 
     def fit(
         self,
-        params: Dict,
-        train_params: Dict,
         X_train: pd.DataFrame,
         y_train: pd.DataFrame,
         X_valid: pd.DataFrame,
@@ -28,10 +28,10 @@ class XGBTrainer(BaseTrainer):
         valid_dataset = xgb.DMatrix(X_valid, label=y_valid, weight=weight_valid)
 
         self.model = xgb.train(
-            params,
+            self.params,
             train_dataset,
             evals=[(train_dataset, "train"), (valid_dataset, "valid")],
-            **train_params,
+            **self.train_params,
         )
 
     def predict(self, data):
@@ -55,13 +55,13 @@ class XGBTrainer(BaseTrainer):
 
 
 class LGBMTrainer(BaseTrainer):
-    def __init__(self):
+    def __init__(self, params, train_params):
         self.model = None
+        self.params = params
+        self.train_params = train_params
 
     def fit(
         self,
-        params: Dict,
-        train_params: Dict,
         X_train: pd.DataFrame,
         y_train: pd.DataFrame,
         X_valid: pd.DataFrame,
@@ -83,7 +83,10 @@ class LGBMTrainer(BaseTrainer):
         )
 
         self.model = lgb.train(
-            params, train_data, valid_sets=[train_data, valid_data], **train_params
+            self.params,
+            train_data,
+            valid_sets=[train_data, valid_data],
+            **self.train_params,
         )
 
     def predict(self, data):

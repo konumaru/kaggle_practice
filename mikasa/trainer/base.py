@@ -31,7 +31,7 @@ class BaseTrainer(object):
         NotImplementedError
 
 
-class SklearnTrainer(BaseTrainer):
+class SklearnClassificationTrainer(BaseTrainer):
     def __init__(self, model):
         self.model = model
 
@@ -82,7 +82,7 @@ class CrossValidationTrainer(object):
         self.trainers = list()
         self.oof = None
 
-    def fit(self, params, train_params, X, y, weight=None, groups=None):
+    def fit(self, X, y, weight: np.ndarray = None, groups=None):
         self.oof = np.zeros(y.shape[0])
         for n_fold, (train_idx, valid_idx) in enumerate(
             self.cv.split(X, y, groups=groups)
@@ -90,18 +90,23 @@ class CrossValidationTrainer(object):
             X_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
             X_valid, y_valid = X.iloc[valid_idx], y.iloc[valid_idx]
 
-            if self.trainer.__class__.__name__ == "SklearnTrainer":
+            if weight is not None:
+                weight_train, weight_valid = weight[train_idx], weight[valid_idx]
+            else:
+                weight_train, weight_valid = None, None
+
+            if "Sklearn" in self.trainer.__class__.__name__:
                 _trainer = copy.deepcopy(self.trainer)
                 _trainer.fit(X_train, y_train)
             else:
                 _trainer = copy.deepcopy(self.trainer)
                 _trainer.fit(
-                    params=params,
-                    train_params=train_params,
                     X_train=X_train,
                     y_train=y_train,
                     X_valid=X_valid,
                     y_valid=y_valid,
+                    weight_train=weight_train,
+                    weight_valid=weight_valid,
                 )
 
             self.trainers.append(_trainer)

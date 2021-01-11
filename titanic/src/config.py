@@ -2,13 +2,15 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
 
-DEBUG = True
+DEBUG = False
 
 
 class MLflowConfig:
     experiment_name = "LightGBM+XGboost_StackedLightGBM"
-    run_name = "add name_feature"
+    run_name = "Weighted Ensemble Model"
     experiment_note = """
+    Only simple raw data features.
+    Weighted Ensemble by LR, RF, LGBM, XGB.ml
     """
 
 
@@ -18,7 +20,7 @@ class FeatureList:
     ]
 
 
-class LogisticParams:
+class LogisticRegressionParams:
     params = {
         "penalty": "l2",
         "C": 1.0,
