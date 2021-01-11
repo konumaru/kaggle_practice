@@ -6,10 +6,9 @@ DEBUG = False
 
 
 class MLflowConfig:
-    experiment_name = "TestExperiment"
+    experiment_name = "EnsembleModel"
     run_name = "Weighted Ensemble Model"
     experiment_note = """
-    Save feature importance.
     """
 
 

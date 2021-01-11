@@ -4,10 +4,8 @@ from mlflow.tracking import MlflowClient
 
 
 class MlflowWriter(object):
-    def __init__(self, experiment_name, tracking_uri="./mlruns"):
-        mlflow.set_tracking_uri(tracking_uri)
-
-        self.client = MlflowClient()
+    def __init__(self, experiment_name, tracking_uri=None):
+        self.client = MlflowClient(tracking_uri=tracking_uri)
         self.experiment_name = experiment_name
         self.experiment_id = self.get_experiment_id(experiment_name)
         self.run_id = self.client.create_run(self.experiment_id).info.run_id
@@ -19,9 +17,7 @@ class MlflowWriter(object):
                 experiment_name
             ).experiment_id
         else:
-            experiment_id = self.client.create_experiment(
-                experiment_name,
-            )
+            experiment_id = self.client.create_experiment(experiment_name)
         return experiment_id
 
     def get_list_experiment_names(self):

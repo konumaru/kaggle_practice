@@ -67,8 +67,9 @@ def main():
     }
     oof_df = pd.DataFrame(oof_dict)
     print(oof_df.head())
+    # ensembler = SimpleAgerageEnsember()
     ensembler = ManualWeightedEnsember(weights=[0.1, 0.1, 0.2, 0.6])
-    ensembler.fit(oof_df.to_numpy(), y)
+    # ensembler.fit(oof_df.to_numpy(), y)
     ensemble_oof = ensembler.predict(oof_df.to_numpy())
     ensemble_accuracy = accuracy_score(y, (ensemble_oof > 0.5))
     print(
@@ -87,7 +88,8 @@ def main():
     # >>>> Domp to mlflow.
     if config.DEBUG is not True:
         writer = MlflowWriter(
-            config.MLflowConfig.experiment_name, tracking_uri="../mlruns"
+            config.MLflowConfig.experiment_name,
+            tracking_uri=os.path.abspath("../mlruns"),
         )
         writer.set_run_name(config.MLflowConfig.run_name)
         writer.set_note_content(config.MLflowConfig.experiment_note)

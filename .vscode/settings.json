@@ -5,7 +5,7 @@
     "python.linting.enabled": true,
     "python.envFile": "${workspaceFolder}/.env",
     "python.linting.flake8Args": [
-        "--ignore=E24,W504,E401,E402,E501",
+        "--ignore=E24,W504,E401,E402,E501,F401",
         "--verbose"
     ]
 }
