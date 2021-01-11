@@ -41,37 +41,36 @@ def main():
         xgb_models, xgb_oof = run_train(XGBTrainer, xgb_params, X, y)
 
     lgbm_metric = accuracy_score(y, (lgbm_oof > 0.5))
-
     xgb_metric = accuracy_score(y, (xgb_oof > 0.5))
-
     ensemble_oof = np.mean([lgbm_oof, xgb_oof], axis=0)
-    ensemble_oof = accuracy_score(y, (ensemble_oof > 0.5))
-
+    ensemble_metric = accuracy_score(y, (ensemble_oof > 0.5))
     # Stacking
     X_pred = pd.DataFrame({"lgbm": lgbm_oof, "xgb": xgb_oof})
     stack_models, stacked_oof = run_train(LGBMTrainer, stack_lgbm_params, X_pred, y)
     stacked_metric = accuracy_score(y, (stacked_oof > 0.5))
-
     # Dump models.
     dump_pickle(lgbm_models, "../data/working/lgbm_models.pkl")
     dump_pickle(xgb_models, "../data/working/xgb_models.pkl")
     dump_pickle(stack_models, "../data/working/stack_models.pkl")
+    # Print metric
+    print(f"Ensemble Metric is {ensemble_metric}")
     # Domp to mlflow.
-    writer = MlflowWriter(config.MLflowConfig.experiment_name)
-    writer.set_run_name(config.MLflowConfig.run_name)
-    writer.set_note_content(config.MLflowConfig.experiment_note)
-    writer.log_param("lgbm_params", lgbm_params)
-    writer.log_param("xgb_params", xgb_params)
-    writer.log_param("stack_lgbm_params", stack_lgbm_params)
-    writer.log_param("feature", ", ".join(feature_files))
-    writer.log_metric("lgbm_auc", lgbm_metric)
-    writer.log_metric("xgb_metric", xgb_metric)
-    writer.log_metric("ensemble_auc", ensemble_oof)
-    writer.log_metric("stacked_auc", stacked_metric)
-    writer.log_artifact("../data/working/lgbm_models.pkl")
-    writer.log_artifact("../data/working/xgb_models.pkl")
-    writer.log_artifact("../data/working/stack_models.pkl")
-    writer.set_terminated()
+    if config.DEBUG is not True:
+        writer = MlflowWriter(config.MLflowConfig.experiment_name)
+        writer.set_run_name(config.MLflowConfig.run_name)
+        writer.set_note_content(config.MLflowConfig.experiment_note)
+        writer.log_param("lgbm_params", lgbm_params)
+        writer.log_param("xgb_params", xgb_params)
+        writer.log_param("stack_lgbm_params", stack_lgbm_params)
+        writer.log_param("feature", ", ".join(feature_files))
+        writer.log_metric("lgbm_auc", lgbm_metric)
+        writer.log_metric("xgb_auc", xgb_metric)
+        writer.log_metric("ensemble_auc", ensemble_metric)
+        writer.log_metric("stacked_auc", stacked_metric)
+        writer.log_artifact("../data/working/lgbm_models.pkl")
+        writer.log_artifact("../data/working/xgb_models.pkl")
+        writer.log_artifact("../data/working/stack_models.pkl")
+        writer.set_terminated()
 
 
 def load_feature(feature_files):
@@ -80,7 +79,8 @@ def load_feature(feature_files):
     for filepath in feature_files:
         feature = load_pickle(filepath)
         data.append(feature)
-    feature = pd.concat(data)
+    feature = pd.concat(data, axis=1)
+    print(feature.columns)
     return feature
 
 

@@ -37,6 +37,19 @@ def submission(data, lgbm_models, xgb_models, stack_models):
 def create_features(data):
     # === extract_raw_feature ===
     # Fill null values.
+    # [
+    #     "Pclass",
+    #     "Sex",
+    #     "Age",
+    #     "SibSp",
+    #     "Parch",
+    #     "Ticket",
+    #     "Fare",
+    #     "Cabin",
+    #     "Embarked",
+    #     "family_size",
+    #     "is_group_guest",
+    # ]
     data["Embarked"].fillna("missing", inplace=True)
 
     # Label encoding.
@@ -47,8 +60,22 @@ def create_features(data):
     cabin_uniques = load_pickle("../data/preprocess/cabin_uniques.pkl", verbose=False)
     data["Cabin"] = data["Cabin"].map({u: i for i, u in enumerate(cabin_uniques)})
 
+    # Fill null Age by honorific
+    honorific_avgAge = [("Mr.", 32), ("Miss.", 21), ("Mrs.", 37), ("Mr.", 5)]
+    for t, val in honorific_avgAge:
+        t_idx = data["Name"].str.contains(t)
+        data["Age"][t_idx].fillna(val, inplace=True)
+    honorific_avgFare = [("Mr.", 24), ("Miss.", 42), ("Mrs.", 49), ("Mr.", 36)]
+    for t, val in honorific_avgAge:
+        t_idx = data["Name"].str.contains(t)
+        data["Fare"][t_idx].fillna(val, inplace=True)
+    # Honorific features
+    data["family_size"] = data["SibSp"] + data["Parch"] + 1
+    data["is_group_guest"] = np.where(data["family_size"] >= 1, 1, 0)
+
     # Drop columns
     data.drop(["Survived", "PassengerId", "Name"], axis=1, inplace=True)
+    print(data.columns)
     return data
 
 

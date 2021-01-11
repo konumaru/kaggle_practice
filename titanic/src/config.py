@@ -1,14 +1,18 @@
+DEBUG = False
+
+
 class MLflowConfig:
     experiment_name = "LightGBM+XGboost_StackedLightGBM"
     run_name = "Baseline"
     experiment_note = """
-    Create Baseline, olny simple raw data.
+    Feature is raw_data + family_group.
     """
 
 
 class FeatureList:
     features = [
         "raw_feature",
+        "family_group",
     ]
 
 
