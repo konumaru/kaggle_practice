@@ -1,6 +1,14 @@
+class MLflowConfig:
+    experiment_name = "LightGBM+XGboost_StackedLightGBM"
+    run_name = "Baseline"
+    experiment_note = """
+    Create Baseline, olny simple raw data.
+    """
+
+
 class FeatureList:
     features = [
-        "raw_feature.pkl",
+        "raw_feature",
     ]
 
 

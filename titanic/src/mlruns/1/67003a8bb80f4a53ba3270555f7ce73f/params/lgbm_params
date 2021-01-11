@@ -1,1 +1,0 @@
-{'objective': 'binary', 'metric': 'binary_logloss', 'num_leaves': 300, 'learning_rate': 0.1, 'max_depth': 2, 'random_seed': 42, 'verbose': -1}

@@ -25,6 +25,12 @@ class MlflowWriter(object):
         experiment_names = [exp.name for exp in experiments]
         return experiment_names
 
+    def set_run_name(self, run_name):
+        self.client.set_tag(self.run_id, "mlflow.runName", run_name)
+
+    def set_note_content(self, note_content):
+        self.client.set_tag(self.run_id, "mlflow.note.content", note_content)
+
     def log_param_from_dict(self, param_dict: dict, prefix=""):
         for key, value in param_dict.items():
             if len(prefix) > 0:

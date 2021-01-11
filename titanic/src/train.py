@@ -17,37 +17,6 @@ from mikasa.trainer.gbdt import LGBMTrainer, XGBTrainer
 from mikasa.mlflow_writer import MlflowWriter
 
 
-def load_feature(feature_files):
-    feature_files = [f"../data/feature/{filename}" for filename in feature_files]
-    data = []
-    for filepath in feature_files:
-        feature = load_pickle(filepath)
-        data.append(feature)
-    feature = pd.concat(data)
-    return feature
-
-
-def load_target():
-    y = load_pickle("../data/feature/target.pkl")
-    return y
-
-
-def run_train(Trainer, params, X, y):
-    trainer = Trainer()
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    cv_trainer = CrossValidationTrainer(cv, trainer)
-    cv_trainer.fit(
-        params=params["params"],
-        train_params=params["train_params"],
-        X=X,
-        y=y,
-    )
-
-    models = cv_trainer.get_models()
-    oof = (cv_trainer.get_oof() > 0.5).astype(int)
-    return models, oof
-
-
 def main():
     # Load Data
     feature_files = config.FeatureList.features
@@ -72,33 +41,28 @@ def main():
         xgb_models, xgb_oof = run_train(XGBTrainer, xgb_params, X, y)
 
     lgbm_metric = accuracy_score(y, (lgbm_oof > 0.5))
-    print(f"AUC of LightGBM is {lgbm_metric:.8f}")
 
     xgb_metric = accuracy_score(y, (xgb_oof > 0.5))
-    print(f"AUC of XGBoost is {xgb_metric:.8f}")
 
     ensemble_oof = np.mean([lgbm_oof, xgb_oof], axis=0)
     ensemble_oof = accuracy_score(y, (ensemble_oof > 0.5))
-    print(f"AUC of Ensemble is {ensemble_oof:.8f}")
 
     # Stacking
     X_pred = pd.DataFrame({"lgbm": lgbm_oof, "xgb": xgb_oof})
     stack_models, stacked_oof = run_train(LGBMTrainer, stack_lgbm_params, X_pred, y)
     stacked_metric = accuracy_score(y, (stacked_oof > 0.5))
-    print(f"AUC of Stacked LightGBM is {stacked_metric:.8f}")
-    print("")
 
     # Dump models.
     dump_pickle(lgbm_models, "../data/working/lgbm_models.pkl")
     dump_pickle(xgb_models, "../data/working/xgb_models.pkl")
     dump_pickle(stack_models, "../data/working/stack_models.pkl")
-    print("")
     # Domp to mlflow.
-    experiment_name = "LightGBM+XGboost_StackedLightGBM"
-    writer = MlflowWriter(experiment_name)
-    writer.log_param("lgbm_", lgbm_params)
-    writer.log_param("xgb_", xgb_params)
-    writer.log_param("stack_lgbm_", stack_lgbm_params)
+    writer = MlflowWriter(config.MLflowConfig.experiment_name)
+    writer.set_run_name(config.MLflowConfig.run_name)
+    writer.set_note_content(config.MLflowConfig.experiment_note)
+    writer.log_param("lgbm_params", lgbm_params)
+    writer.log_param("xgb_params", xgb_params)
+    writer.log_param("stack_lgbm_params", stack_lgbm_params)
     writer.log_param("feature", ", ".join(feature_files))
     writer.log_metric("lgbm_auc", lgbm_metric)
     writer.log_metric("xgb_metric", xgb_metric)
@@ -107,6 +71,37 @@ def main():
     writer.log_artifact("../data/working/lgbm_models.pkl")
     writer.log_artifact("../data/working/xgb_models.pkl")
     writer.log_artifact("../data/working/stack_models.pkl")
+    writer.set_terminated()
+
+
+def load_feature(feature_files):
+    feature_files = [f"../data/feature/{filename}.pkl" for filename in feature_files]
+    data = []
+    for filepath in feature_files:
+        feature = load_pickle(filepath)
+        data.append(feature)
+    feature = pd.concat(data)
+    return feature
+
+
+def load_target():
+    y = load_pickle("../data/feature/target.pkl")
+    return y
+
+
+def run_train(Trainer, params, X, y):
+    trainer = Trainer()
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv_trainer = CrossValidationTrainer(cv, trainer)
+    cv_trainer.fit(
+        params=params["params"],
+        train_params=params["train_params"],
+        X=X,
+        y=y,
+    )
+    models = cv_trainer.get_models()
+    oof = (cv_trainer.get_oof() > 0.5).astype(int)
+    return models, oof
 
 
 if __name__ == "__main__":
