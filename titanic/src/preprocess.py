@@ -31,8 +31,13 @@ def raw_feature():
     # Fill null with average.
     data["Age"].fillna(30, inplace=True)
     data["Fare"].fillna(33, inplace=True)
+    #
+    # data["Name_length"] = data["Name"].apply(lambda x: len(x.split()))
+    # data["Has_Cabin"] = data["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
 
-    use_cols = ["Sex", "SibSp", "Parch", "Age", "Fare"]
+    data["Fare_per_person"] = data.Fare / np.mean(data.SibSp + data.Parch + 1)
+
+    use_cols = ["Sex", "SibSp", "Parch", "Age", "Fare", "Fare_per_person"]
     use_cols += list(data.columns[data.columns.str.contains("Pclass")])
     use_cols += list(data.columns[data.columns.str.contains("Embarked")])
     return data[use_cols]
@@ -51,18 +56,16 @@ def family_feature():
     return data[dst_cols]
 
 
-@save_cache(os.path.join(dump_dir, "ticket_type.pkl"), use_cache=False)
-def ticket_type():
+@save_cache(os.path.join(dump_dir, "cabin_feature.pkl"), use_cache=False)
+def cabin_feature():
     data = pd.read_csv("../data/raw/train.csv")
-    data["ticket_type"] = data["Ticket"].apply(lambda x: x[0:3])
-    cabin_uniques = load_pickle(
-        "../data/preprocess/ticketType_uniques.pkl", verbose=False
-    )
-    data["ticket_type"] = data["ticket_type"].map(
-        {u: i for i, u in enumerate(cabin_uniques)}
-    )
-    print(data[["ticket_type"]].head())
-    return data[["ticket_type"]]
+    data["Cabin_head"] = data["Cabin"].str.extract(r"(\w)[\d+]", expand=False)
+    data["Cabin_head"].fillna("H", inplace=True)
+
+    cabin_head_map = {s: i for i, s in enumerate("ABCDEFGH")}
+    data["Cabin_head"] = data["Cabin_head"].map(cabin_head_map)
+    data = add_dummies(data, "Cabin_head")
+    return data[list(data.columns[data.columns.str.contains("Cabin_head")])]
 
 
 @save_cache(os.path.join(dump_dir, "fare_rank.pkl"), use_cache=False)
@@ -76,6 +79,20 @@ def fare_rank():
     data["Fare_rank"] = data["Fare_rank"].astype(int)
     data["FareRank_Pclass"] = data["Fare_rank"] * data["Pclass"]
     return data[["Fare_rank", "FareRank_Pclass"]]
+
+
+@save_cache(os.path.join(dump_dir, "age_rank.pkl"), use_cache=False)
+def age_rank():
+    data = pd.read_csv("../data/raw/train.csv")
+    data["Age_rank"] = -1
+    data.loc[data["Age"] <= 16, "Age_rank"] = 0
+    data.loc[(data["Age"] > 16) & (data["Age"] <= 32), "Age_rank"] = 1
+    data.loc[(data["Age"] > 32) & (data["Age"] <= 48), "Age_rank"] = 2
+    data.loc[(data["Age"] > 48) & (data["Age"] <= 64), "Age_rank"] = 3
+    data.loc[data["Age"] > 64, "Age_rank"] = 4
+    data["Age_rank"] = data["Age_rank"].astype(int)
+    data["AgeRank_Pclass"] = data["Age_rank"] * data["Pclass"]
+    return data[["Age_rank", "AgeRank_Pclass"]]
 
 
 @save_cache(os.path.join(dump_dir, "name_feature.pkl"), use_cache=False)
@@ -110,9 +127,11 @@ def name_feature():
         ("Master.", 5),
         ("Rare", 45),
     ]
+    data["Age_fillna"] = data["Age"]
     for t, val in honorific_avgAge:
         t_idx = data["Title"].str.contains(t)
-        data["Age"][t_idx].fillna(val, inplace=True)
+        data["Age_fillna"][t_idx].fillna(val, inplace=True)
+    data["Age_fillna"].fillna(data["Age"].mean(), inplace=True)
     honorific_avgFare = [
         ("Mr.", 9),
         ("Miss.", 15),
@@ -120,27 +139,38 @@ def name_feature():
         ("Master.", 26),
         ("Rare", 28),
     ]
+    data["Fare_fillna"] = data["Fare"]
     for t, val in honorific_avgAge:
         t_idx = data["Title"].str.contains(t)
-        data["Fare"][t_idx].fillna(val, inplace=True)
+        data["Fare_fillna"][t_idx].fillna(val, inplace=True)
+    data["Fare_fillna"].fillna(data["Age"].mean(), inplace=True)
 
     title_mapping = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5}
     data["Title"] = data["Title"].map(title_mapping)
-    return data[["Title"]]
+    return data["Title"]
 
 
-@save_cache(os.path.join(dump_dir, "age_rank.pkl"), use_cache=False)
-def age_rank():
+@save_cache(os.path.join(dump_dir, "multi_feature.pkl"), use_cache=False)
+def multi_feature():
     data = pd.read_csv("../data/raw/train.csv")
-    data["Age_rank"] = -1
-    data.loc[data["Age"] <= 16, "Age_rank"] = 0
-    data.loc[(data["Age"] > 16) & (data["Age"] <= 32), "Age_rank"] = 1
-    data.loc[(data["Age"] > 32) & (data["Age"] <= 48), "Age_rank"] = 2
-    data.loc[(data["Age"] > 48) & (data["Age"] <= 64), "Age_rank"] = 3
-    data.loc[data["Age"] > 64, "Age_rank"] = 4
-    data["Age_rank"] = data["Age_rank"].astype(int)
-    data["AgeRank_Pclass"] = data["Age_rank"] * data["Pclass"]
-    return data[["Age_rank", "AgeRank_Pclass"]]
+    data["Sex"] = data["Sex"].map({"female": 0, "male": 1})
+
+    data["multi_Sex_Parch"] = data["Sex"] * data["Parch"]
+    data["multi_Sex_SibSp"] = data["Sex"] * data["SibSp"]
+    data["multi_Sex_Parch+SibSp"] = data["Sex"] * (data["Parch"] + data["SibSp"])
+
+    data["multi_Age_Fare"] = data["Age"] * data["Fare"]
+
+    data.fillna(-1, inplace=True)
+
+    return data[
+        [
+            "multi_Sex_Parch",
+            "multi_Sex_SibSp",
+            "multi_Sex_Parch+SibSp",
+            "multi_Age_Fare",
+        ]
+    ]
 
 
 def create_features():
@@ -148,10 +178,11 @@ def create_features():
     # Features
     raw_feature()
     family_feature()
-    # ticket_type()
-    # fare_rank()
-    # age_rank()
-    # name_feature()
+    fare_rank()
+    age_rank()
+    name_feature()
+    multi_feature()
+    cabin_feature()
 
 
 def main():

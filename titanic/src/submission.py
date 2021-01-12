@@ -27,14 +27,12 @@ def submission(data, lr_models, rf_models, lgbm_models, xgb_models):
         preds = [m.predict_proba(data)[:, 1] for m in models]
         return np.mean(preds, axis=0)
 
-    pred = np.array(
-        [
-            sklearn_predict(lr_models, data),
-            sklearn_predict(rf_models, data),
-            lgbm_predict(lgbm_models, data),
-            xgb_predict(xgb_models, data),
-        ]
-    ).mean(axis=0)
+    pred = (
+        0.0 * sklearn_predict(lr_models, data)
+        + 0.1 * sklearn_predict(rf_models, data)
+        + 0.3 * lgbm_predict(lgbm_models, data)
+        + 0.6 * xgb_predict(xgb_models, data)
+    )
     pred = (pred > 0.5).astype(np.int8)
     return pred
 
@@ -47,33 +45,25 @@ def raw_feature():
     data = add_dummies(data, "Pclass")
     data["Embarked"].fillna("missing", inplace=True)
     data = add_dummies(data, "Embarked")
-    data["Embarked_missing"] = 0
     # Fill null with average.
     data["Age"].fillna(30, inplace=True)
     data["Fare"].fillna(33, inplace=True)
+    #
+    # data["Name_length"] = data["Name"].apply(lambda x: len(x.split()))
+    # data["Has_Cabin"] = data["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
 
-    use_cols = ["Sex", "SibSp", "Parch", "Age", "Fare"]
+    data["Fare_per_person"] = data.Fare / np.mean(data.SibSp + data.Parch + 1)
+
+    data["Embarked_missing"] = 0
+    use_cols = ["Sex", "SibSp", "Parch", "Age", "Fare", "Fare_per_person"]
     use_cols += list(data.columns[data.columns.str.contains("Pclass")])
     use_cols += list(data.columns[data.columns.str.contains("Embarked")])
     return data[use_cols]
 
 
-def family_feature():
-    data = pd.read_csv("../data/raw/test.csv")
-    data["family_size"] = data["SibSp"] + data["Parch"] + 1
-    data["is_alone"] = np.where(data["family_size"] == 0, 1, 0)
-
-    dst_cols = [
-        "family_size",
-        "is_alone",
-    ]
-    return data[dst_cols]
-
-
 def create_features():
     data = []
     data.append(raw_feature())
-    data.append(family_feature())
 
     data = pd.concat(data, axis=1)
     return data

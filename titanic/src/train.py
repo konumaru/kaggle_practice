@@ -45,12 +45,14 @@ def main():
     )
     lgbm_models, lgbm_oof, lgbm_importance_fig = run_train(lgbm_trainer, X, y)
     lgbm_accuracy = accuracy_score(y, (lgbm_oof > 0.5))
+    lgbm_importance_fig.savefig("../data/working/lgbm_importance.png")
     # XGBoost
     xgb_trainer = XGBTrainer(
         config.XGBoostPrams.params, config.XGBoostPrams.train_params
     )
     xgb_models, xgb_oof, xgb_importance_fig = run_train(xgb_trainer, X, y)
     xgb_accuracy = accuracy_score(y, (xgb_oof > 0.5))
+    xgb_importance_fig.savefig("../data/working/xgb_importance.png")
 
     # >>>>> Print Metric.
     print(f"{'LR':>6} Accuracy is {lr_accuracy:.08f}")
@@ -68,7 +70,7 @@ def main():
     oof_df = pd.DataFrame(oof_dict)
     print(oof_df.head())
     # ensembler = SimpleAgerageEnsember()
-    ensembler = ManualWeightedEnsember(weights=[0.1, 0.1, 0.2, 0.6])
+    ensembler = ManualWeightedEnsember(weights=[0.0, 0.1, 0.3, 0.6])
     # ensembler.fit(oof_df.to_numpy(), y)
     ensemble_oof = ensembler.predict(oof_df.to_numpy())
     ensemble_accuracy = accuracy_score(y, (ensemble_oof > 0.5))
@@ -93,6 +95,8 @@ def main():
         )
         writer.set_run_name(config.MLflowConfig.run_name)
         writer.set_note_content(config.MLflowConfig.experiment_note)
+        # Features
+        writer.log_param("Feature", ", ".join(feature_files))
         # Logistic Regression
         writer.log_param("LR_params", config.LogisticRegressionParams.params)
         writer.log_metric("LR_Accuracy", lr_accuracy)
@@ -142,8 +146,8 @@ def load_feature(feature_files):
 
 
 def run_train(Trainer, X, y, params=None, train_params=None):
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    # cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)
+    # cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)
     cv_trainer = CrossValidationTrainer(cv, Trainer)
     cv_trainer.fit(
         X=X,

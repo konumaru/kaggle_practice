@@ -7,16 +7,20 @@ DEBUG = True
 
 class MLflowConfig:
     experiment_name = "EnsembleModel"
-    run_name = "Weighted Ensemble Model"
+    run_name = "Metric Change for AUC"
     experiment_note = """
-    Add family_feature.
     """
 
 
 class FeatureList:
     features = [
         "raw_feature",
-        "family_feature",
+        # "family_feature",
+        # "fare_rank",
+        # "age_rank",
+        # "name_feature",
+        # "multi_feature",
+        # "cabin_feature",
     ]
 
 
@@ -53,7 +57,7 @@ class RandomForestParams:
 class LightgbmParams:
     params = {
         "objective": "binary",
-        "metric": "binary_logloss",
+        "metric": "auc",
         "num_leaves": 300,
         "learning_rate": 0.1,
         "bagging_fraction": 0.8,
@@ -73,6 +77,7 @@ class LightgbmParams:
 class XGBoostPrams:
     params = {
         "objective": "binary:logistic",
+        "eval_metric": "auc",
         "learning_rate": 0.1,
         "max_depth": 4,
         "colsample_bytree": 0.8,
