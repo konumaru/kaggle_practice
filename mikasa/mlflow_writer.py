@@ -5,6 +5,17 @@ from mlflow.tracking import MlflowClient
 
 class MlflowWriter(object):
     def __init__(self, experiment_name, tracking_uri=None):
+        """MLflow Client Writer.
+
+        Parameters
+        ----------
+        experiment_name : str
+            Experiment name. Experiment is a term of mlflow.
+        tracking_uri : str, optional
+            Destination URI that spits out log files.
+            if you specify a local directory, specify the absolute path.
+            , by default None
+        """
         self.client = MlflowClient(tracking_uri=tracking_uri)
         self.experiment_name = experiment_name
         self.experiment_id = self.get_experiment_id(experiment_name)

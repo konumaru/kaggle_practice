@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 
 
 class BaseEnsembler(object):
@@ -38,11 +39,12 @@ class ManualWeightedEnsember(object):
         return pred
 
 
-class MinimizeEnsember(object):
-    def __init__(self):
-        super().__init__()
-
-
 class VotingEnsember(object):
     def __init__(self):
         super().__init__()
+
+    def fit(self, X, y):
+        NotImplementedError
+
+    def predict(self, data):
+        NotImplementedError

@@ -2,7 +2,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
 
-DEBUG = False
+DEBUG = True
 
 
 class MLflowConfig:
