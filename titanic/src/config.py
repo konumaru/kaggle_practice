@@ -9,12 +9,14 @@ class MLflowConfig:
     experiment_name = "EnsembleModel"
     run_name = "Weighted Ensemble Model"
     experiment_note = """
+    Add family_feature.
     """
 
 
 class FeatureList:
     features = [
         "raw_feature",
+        "family_feature",
     ]
 
 

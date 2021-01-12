@@ -80,8 +80,8 @@ def main():
     )
 
     # >>>>> Dump models.
-    dump_pickle(lgbm_models, "../data/working/lr_models.pkl")
-    dump_pickle(lgbm_models, "../data/working/rf_models.pkl")
+    dump_pickle(lr_models, "../data/working/lr_models.pkl")
+    dump_pickle(rf_models, "../data/working/rf_models.pkl")
     dump_pickle(lgbm_models, "../data/working/lgbm_models.pkl")
     dump_pickle(xgb_models, "../data/working/xgb_models.pkl")
 

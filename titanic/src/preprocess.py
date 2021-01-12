@@ -38,23 +38,16 @@ def raw_feature():
     return data[use_cols]
 
 
-@save_cache(os.path.join(dump_dir, "family_group.pkl"), use_cache=False)
+@save_cache(os.path.join(dump_dir, "family_feature.pkl"), use_cache=False)
 def family_feature():
     data = pd.read_csv("../data/raw/train.csv")
     data["family_size"] = data["SibSp"] + data["Parch"] + 1
-    data["is_group_guest"] = np.where(data["family_size"] >= 1, 1, 0)
-
-    # data["escape_boarding_proba"] = np.where(data["is_group_guest"] == 0, 1, -1)
-    # for t in ["Mr.", "Miss.", "Mrs.", "Master."]:
-    #     t_idx = data["Name"].str.contains(t)
-    #     data["escape_boarding_proba"][t_idx] = 1 / data["family_size"][t_idx]
+    data["is_alone"] = np.where(data["family_size"] == 0, 1, 0)
 
     dst_cols = [
         "family_size",
-        "is_group_guest",
-        # "escape_boarding_proba",
+        "is_alone",
     ]
-    print(data[dst_cols].head())
     return data[dst_cols]
 
 
@@ -154,7 +147,7 @@ def create_features():
     target()
     # Features
     raw_feature()
-    # family_feature()
+    family_feature()
     # ticket_type()
     # fare_rank()
     # age_rank()
