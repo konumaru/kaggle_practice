@@ -1,6 +1,7 @@
 # mikasa
 
 mikasa is a kaggle utils library.
+The name "mikasa" comes from a character in "Attack on Titan".
 
 ## Concept
 

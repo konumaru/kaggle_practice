@@ -7,7 +7,6 @@
 ## Solution
 ### Feature
 - raw_data
-  - Age
 
 ### Model
 - Ensenble Model

@@ -31,7 +31,7 @@ def raw_feature():
     # Fill null with average.
     data["Age"].fillna(30, inplace=True)
     data["Fare"].fillna(33, inplace=True)
-    #
+
     # data["Name_length"] = data["Name"].apply(lambda x: len(x.split()))
     # data["Has_Cabin"] = data["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
 
