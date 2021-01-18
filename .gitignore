@@ -158,5 +158,6 @@ dmypy.json
 
 # Pickle file.
 *.pkl
+*.pickle
 *.csv
 !*/raw/*.csv
