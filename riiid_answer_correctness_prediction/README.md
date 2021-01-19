@@ -3,6 +3,9 @@ URL: https://www.kaggle.com/c/riiid-test-answer-prediction
 
 様々な質問に４択で回答する学習アプリを利用するユーザーについて各質問ごとに正解/不正解するかを２値分類する。
 
+## Scripts
+
+
 ## Solution
 
 ## Reference
