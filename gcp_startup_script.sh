@@ -18,6 +18,7 @@ sudo apt install -y build-essential \
     wget \
     curl \
     llvm \
+    xclip \
     libncurses5-dev \
     libncursesw5-dev \
     xz-utils \
