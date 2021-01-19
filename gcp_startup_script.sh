@@ -23,4 +23,9 @@ sudo apt install -y build-essential \
     xz-utils \
     tk-dev \
     libffi-dev \
-    libssl-devn
+    libssl-dev \
+    python \
+    python3 \
+    python3-dev \
+    python3-venv \
+    python3-distutils
