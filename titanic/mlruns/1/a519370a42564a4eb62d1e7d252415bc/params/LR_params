@@ -1,1 +1,0 @@
-{'penalty': 'l2', 'C': 1.0, 'class_weight': None, 'random_state': 42, 'solver': 'lbfgs', 'max_iter': 500, 'warm_start': False, 'n_jobs': -1}
