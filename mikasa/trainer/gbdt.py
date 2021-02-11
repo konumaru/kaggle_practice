@@ -5,6 +5,7 @@ import pandas as pd
 
 import xgboost as xgb
 import lightgbm as lgb
+import catboost
 
 from .base import BaseTrainer
 
@@ -21,6 +22,7 @@ class XGBTrainer(BaseTrainer):
         y_train: pd.DataFrame,
         X_valid: pd.DataFrame,
         y_valid: pd.DataFrame,
+        categorical_feature: List[str] = None,
         weight_train: pd.DataFrame = None,
         weight_valid: pd.DataFrame = None,
     ):
@@ -52,6 +54,9 @@ class XGBTrainer(BaseTrainer):
 
     def get_model(self):
         return self.model
+
+    def set_seed(self, seed):
+        self.params["seed"] = seed
 
 
 class LGBMTrainer(BaseTrainer):
@@ -110,6 +115,67 @@ class LGBMTrainer(BaseTrainer):
     def get_model(self):
         return self.model
 
+    def set_seed(self, seed):
+        self.params["seed"] = seed
+
+
+class CatBoostTrainer(BaseTrainer):
+    def __init__(self, params, train_params):
+        self.model = catboost.CatBoost(params=params)
+        self.params = params
+        self.train_params = train_params
+
+    def fit(
+        self,
+        X_train: pd.DataFrame,
+        y_train: pd.DataFrame,
+        X_valid: pd.DataFrame,
+        y_valid: pd.DataFrame,
+        categorical_feature: List[str] = None,
+        weight_train: pd.DataFrame = None,
+        weight_valid: pd.DataFrame = None,
+    ):
+        train_pool = catboost.Pool(
+            X_train,
+            label=y_train,
+            weight=weight_train,
+            cat_features=categorical_feature,
+        )
+        valid_pool = catboost.Pool(
+            X_valid,
+            label=y_valid,
+            weight=weight_valid,
+            cat_features=categorical_feature,
+        )
+
+        self.model.fit(
+            X=train_pool,
+            eval_set=valid_pool,
+            **self.train_params,
+        )
+
+    def predict(self, data):
+        pred = self.model.predict(data)
+        return pred
+
+    def get_importance(self):
+        """Return feature importance.
+
+        Returns
+        -------
+        dict :
+            Dictionary of feature name, feature importance.
+        """
+        importance = self.model.feature_importances_
+        feature_name = self.model.feature_names_
+        return dict(zip(feature_name, importance))
+
+    def get_model(self):
+        return self.model
+
+    def set_seed(self, seed):
+        self.params["random_seed"] = seed
+
 
 def main():
     from sklearn.datasets import make_classification
@@ -131,9 +197,11 @@ def main():
         X, Y, test_size=0.2, stratify=Y
     )
 
-    trainer = LGBMTrainer()
-    trainer.fit({"verbosity": -1}, {}, X_train, y_train, X_valid, y_valid)
+    trainer = CatBoostTrainer({}, {"verbose": 100})
+    trainer.fit(X_train, y_train, X_valid, y_valid)
     pred = trainer.predict(X_test)
+
+    print(trainer.get_importance())
 
     auc = roc_auc_score(y_test, pred)
     print("AUC is", auc)

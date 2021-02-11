@@ -11,10 +11,29 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 plt.style.use("seaborn-darkgrid")
 
 
-def plot_importance(y, data, xerr=None, figsize=(10, 15)):
+def plot_importance(
+    y, data, xerr=None, max_num_feature=50, figsize=(10, 15), sort=True
+):
     # Plot Importance DataFrame.
+    if sort:
+        sort_idx = np.argsort(data)
+        y = np.array(y)[sort_idx]
+        data = np.array(data)[sort_idx]
+        if xerr is not None:
+            xerr = np.array(xerr)[sort_idx]
+
+    y = y[-max_num_feature:]
+    data = data[-max_num_feature:]
+    if xerr is not None:
+        xerr = np.array(xerr)[-max_num_feature:]
+
     fig, ax = plt.subplots(figsize=figsize)
-    ax.barh(y, width=data, xerr=xerr, label="importance")
+    ax.barh(
+        y,
+        width=list(data),
+        xerr=xerr,
+        label="importance",
+    )
     ax.legend(loc="lower right")
     fig.suptitle("Feature importance")
     fig.tight_layout()
