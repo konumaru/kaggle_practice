@@ -9,18 +9,20 @@ NUM_SEED = 3
 
 class MLflowConfig:
     experiment_name = "Titanic, LGBM"
-    run_name = "First Running."
+    run_name = "Add cabin_feature"
     experiment_note = """
     Frist experiment.
-    Train model with raw feature.
+    Train model with raw feature and cabin_feature.
     """
 
 
 class FeatureList:
     features = [
         "raw_feature",
+        "cabin_feature",
+        # >>>>> Not change accuracy features <<<<<
+        # >>>>> Not improved features <<<<<
         # "age_rank",
-        # "cabin_feature",
         # "family_feature",
         # "fare_rank",
         # "name_feature",

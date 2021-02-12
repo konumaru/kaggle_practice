@@ -2,7 +2,7 @@ artifact_uri: /Users/rui/Documents/repositories/mikasa/mlruns/1/4e78fcc960294390
 end_time: 1613102898512
 entry_point_name: ''
 experiment_id: '1'
-lifecycle_stage: active
+lifecycle_stage: deleted
 name: ''
 run_id: 4e78fcc960294390ae324a01c3dcc3e9
 run_uuid: 4e78fcc960294390ae324a01c3dcc3e9

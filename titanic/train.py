@@ -77,17 +77,24 @@ def main():
     eval_metrics = {}
 
     # Train model.
-    lgbm_trainer = LGBMTrainer(
-        config.LightgbmParams.params, config.LightgbmParams.train_params
-    )
-    trainer, metric = run_train("LGBM", lgbm_trainer, X_train, y_train)
-    cv_metrics["LGBM"] = metric
-    eval_metrics["LGBM"] = eval_single_model(trainer, X_eval, y_eval)
-    save_importance("LGBM", trainer)
+    base_trainers = {
+        "LGBM": LGBMTrainer(
+            config.LightgbmParams.params, config.LightgbmParams.train_params
+        ),
+    }
+    fit_trainers = {}
+    for model_name, base_trainer in base_trainers.items():
+        trainer, metric = run_train(model_name, base_trainer, X_train, y_train)
+
+        fit_trainers[model_name] = trainer
+        cv_metrics[model_name] = metric
+        eval_metrics[model_name] = eval_single_model(trainer, X_eval, y_eval)
+        save_importance(model_name, trainer)
 
     # Stacking
     pred_first = []
-    pred_first.append(np.array(trainer.predict(X_eval)).T)
+    for model_name, _trainer in fit_trainers.items():
+        pred_first.append(np.array(_trainer.predict(X_eval)).T)
     pred_first = np.concatenate(pred_first, axis=1)
     pred_first = pd.DataFrame(pred_first)
 
@@ -110,7 +117,7 @@ def main():
         writer.set_run_name(config.MLflowConfig.run_name)
         writer.set_note_content(config.MLflowConfig.experiment_note)
         # Features
-        writer.log_param("Feature", ", ".join(feature_files))
+        writer.log_param("Feature", ", ".join(config.FeatureList.features))
         # Paraeters
         writer.log_param("SEED", config.SEED)
         writer.log_param("NUM_SEED", config.NUM_SEED)
@@ -123,9 +130,9 @@ def main():
         )
         # Metric
         for model_name, _metric in cv_metrics.items():
-            writer.log_metric(f"{model_name}_Metric", _metric)
+            writer.log_metric(f"{model_name} CV Metric", _metric)
         for model_name, _metric in eval_metrics.items():
-            writer.log_metric(f"{model_name}_Metric", _metric)
+            writer.log_metric(f"{model_name} Eval Metric", _metric)
         # Close writer client.
         writer.set_terminated()
 
