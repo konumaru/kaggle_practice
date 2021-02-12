@@ -9,7 +9,6 @@ import pandas as pd
 from mikasa.io import save_cache, load_pickle, dump_pickle
 from mikasa.preprocessing import add_dummies
 
-mode = "train"
 dump_dir = "../data/titanic/feature/"
 
 
@@ -141,14 +140,7 @@ def name_feature(data: pd.DataFrame):
     return data["Title"]
 
 
-def create_features():
-    # Load raw data.
-    data = pd.read_csv("../data/titanic/raw/train.csv")
-
-    # Save target
-    target(data.copy())
-
-    # Save features.
+def create_features(data: pd.DataFrame):
     raw_feature(data.copy())
     family_feature(data.copy())
     cabin_feature(data.copy())
@@ -158,7 +150,12 @@ def create_features():
 
 
 def main():
-    create_features()
+    # Load raw data.
+    data = pd.read_csv("../data/titanic/raw/train.csv")
+    # Save features.
+    create_features(data.copy())
+    # Dump target
+    target(data.copy())
 
 
 if __name__ == "__main__":
