@@ -1,93 +1,93 @@
 import os
 import sys
 
-sys.path.append("../..")
+sys.path.append("..")
 
 import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
 
-from sklearn.model_selection import StratifiedKFold, RepeatedStratifiedKFold
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.metrics import accuracy_score
 
 import config
 from mikasa.common import timer
-from mikasa.io import load_pickle, dump_pickle
-from mikasa.trainer.base import SklearnClassificationTrainer
-from mikasa.trainer.base import CrossValidationTrainer
-from mikasa.trainer.gbdt import LGBMTrainer, XGBTrainer
-from mikasa.ensemble import SimpleAgerageEnsember, ManualWeightedEnsember
+from mikasa.io import load_pickle, dump_pickle, load_feature
+
+from mikasa.trainer.gbdt import LGBMTrainer
+from mikasa.trainer.cross_validation import RSACrossValidationTrainer
+from mikasa.trainer.base import SklearnRegressionTrainer
+
 from mikasa.plot import plot_importance
 from mikasa.mlflow_writer import MlflowWriter
 
 
+def run_train(model_name, cv, base_trainer, X, y):
+    trainer = RSACrossValidationTrainer(cv, base_trainer, seed=config.SEED)
+    trainer.fit(X=X, y=y, num_seed=config.NUM_SEED)
+    # Save model.
+    models = trainer.get_models()
+    dump_pickle(models, f"../data/titanic/model/{model_name}_models.pkl")
+    # Evaluation by cv.
+    oof = trainer.get_oof()
+    is_usage_oof = np.logical_not(np.isnan(oof))
+    oof = np.where(oof > 0.5, 1, 0)
+    metric = accuracy_score(y[is_usage_oof], oof[is_usage_oof])
+    return trainer, metric
+
+
 def main():
-    # Load Data
+    # Load data.
+    src_dir = "../data/titanic/feature/"
     feature_files = config.FeatureList.features
+    feature_files = [
+        os.path.join(src_dir, f"{filename}.pkl") for filename in feature_files
+    ]
     X = load_feature(feature_files)
-    y = load_pickle("../data/feature/target.pkl")
+    y = load_pickle(os.path.join(src_dir, "target.pkl"))
     print(X.head())
     print(y.head())
 
-    # >>>>> Fit Trainers.
-    # Logistic Regression
-    lr_trainer = SklearnClassificationTrainer(config.LogisticRegressionParams.model)
-    lr_models, lr_oof, _ = run_train(lr_trainer, X, y)
-    lr_accuracy = accuracy_score(y, (lr_oof > 0.5))
-    # Rndom Forest
-    rf_trainer = SklearnClassificationTrainer(config.RandomForestParams.model)
-    rf_models, rf_oof, _ = run_train(rf_trainer, X, y)
-    rf_accuracy = accuracy_score(y, (rf_oof > 0.5))
-    # LightGBM
+    # Split data
+    X_train, X_eval, y_train, y_eval = train_test_split(
+        X, y, test_size=0.2, random_state=config.SEED, stratify=y
+    )
+
+    metric_dict = {}
+
+    # Train model.
+    cv = StratifiedKFold(n_splits=3, shuffle=True)
     lgbm_trainer = LGBMTrainer(
         config.LightgbmParams.params, config.LightgbmParams.train_params
     )
-    lgbm_models, lgbm_oof, lgbm_importance_fig = run_train(lgbm_trainer, X, y)
-    lgbm_accuracy = accuracy_score(y, (lgbm_oof > 0.5))
-    lgbm_importance_fig.savefig("../data/working/lgbm_importance.png")
-    # XGBoost
-    xgb_trainer = XGBTrainer(
-        config.XGBoostPrams.params, config.XGBoostPrams.train_params
-    )
-    xgb_models, xgb_oof, xgb_importance_fig = run_train(xgb_trainer, X, y)
-    xgb_accuracy = accuracy_score(y, (xgb_oof > 0.5))
-    xgb_importance_fig.savefig("../data/working/xgb_importance.png")
+    trainer, metric = run_train("LGBM", cv, lgbm_trainer, X_train, y_train)
+    metric_dict["LGBM"] = metric
+    # Save figure of feature importance.
+    name, mean_importance, std_importance = trainer.get_importance()
+    fig = plot_importance(name, mean_importance, std_importance)
+    fig.savefig("../data/titanic/working/lgbm_importance.png")
 
-    # >>>>> Print Metric.
-    print(f"{'LR':>6} Accuracy is {lr_accuracy:.08f}")
-    print(f"{'RF':>6} Accuracy is {rf_accuracy:.08f}")
-    print(f"{'LGBM':>6} Accuracy is {lgbm_accuracy:.08f}")
-    print(f"{'XGB':>6} Accuracy is {xgb_accuracy:.08f}")
+    # Prediction
+    pred_first = []
+    predict = np.array(trainer.predict(X_eval)).T
+    pred_first.append(predict)
+    pred_first = np.concatenate(pred_first, axis=1)
+    pred_first = pd.DataFrame(pred_first)
 
-    # >>>>> Ensemble.
-    oof_dict = {
-        "LR": lr_oof,
-        "RF": rf_oof,
-        "LGBM": lgbm_oof,
-        "XGB": xgb_oof,
-    }
-    oof_df = pd.DataFrame(oof_dict)
-    print(oof_df.head())
-    # ensembler = SimpleAgerageEnsember()
-    ensembler = ManualWeightedEnsember(weights=[0.0, 0.1, 0.3, 0.6])
-    # ensembler.fit(oof_df.to_numpy(), y)
-    ensemble_oof = ensembler.predict(oof_df.to_numpy())
-    ensemble_accuracy = accuracy_score(y, (ensemble_oof > 0.5))
-    print(
-        "{0:>6} Accuracy is {1:.08f}".format(
-            "SimpleAgerageEnsember",
-            ensemble_accuracy,
-        )
-    )
+    # Stacking
+    base_trainer = SklearnRegressionTrainer(model=Ridge(random_state=config.SEED))
+    cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=config.SEED)
+    trainer, metric = run_train("stack_ridge", cv, base_trainer, pred_first, y_eval)
+    print(trainer.get_models()[0].coef_)
+    metric_dict["Stack"] = metric
 
-    # >>>>> Dump models.
-    dump_pickle(lr_models, "../data/working/lr_models.pkl")
-    dump_pickle(rf_models, "../data/working/rf_models.pkl")
-    dump_pickle(lgbm_models, "../data/working/lgbm_models.pkl")
-    dump_pickle(xgb_models, "../data/working/xgb_models.pkl")
+    # Evaluation
+    for model_name, metric in metric_dict.items():
+        print(f"{model_name:>8} Metric: {metric:.08f}")
 
-    # >>>> Domp to mlflow.
+    # Domp logs to mlflow.
     if config.DEBUG is not True:
         writer = MlflowWriter(
             config.MLflowConfig.experiment_name,
@@ -98,75 +98,43 @@ def main():
         # Features
         writer.log_param("Feature", ", ".join(feature_files))
         # Logistic Regression
-        writer.log_param("LR_params", config.LogisticRegressionParams.params)
-        writer.log_metric("LR_Accuracy", lr_accuracy)
-        writer.log_artifact("../data/working/lr_models.pkl")
-        # Rndom Forest
-        writer.log_param("RF_params", config.RandomForestParams.params)
-        writer.log_metric("RF_Accuracy", rf_accuracy)
-        writer.log_artifact("../data/working/rf_models.pkl")
-        # LightGBM
-        writer.log_param(
-            "LGBM_params",
-            {
-                "params": config.LightgbmParams.params,
-                "train_params": config.LightgbmParams.train_params,
-            },
-        )
-        writer.log_metric("LGBM_Accuracy", lgbm_accuracy)
-        writer.log_artifact("../data/working/lgbm_models.pkl")
-        writer.log_figure(lgbm_importance_fig, "lgbm_importance.png")
-        lgbm_importance_fig.savefig("../data/working/lgbm_importance.png")
-        # XGBoost
-        writer.log_param(
-            "XGB_params",
-            {
-                "params": config.XGBoostPrams.params,
-                "train_params": config.XGBoostPrams.train_params,
-            },
-        )
-        writer.log_metric("XGB_Accuracy", xgb_accuracy)
-        writer.log_artifact("../data/working/xgb_models.pkl")
-        writer.log_figure(xgb_importance_fig, "xgb_importance.png")
-        xgb_importance_fig.savefig("../data/working/xgb_importance.png")
-        # Ensemble
-        writer.log_metric("Ensemble_Accuracy", ensemble_accuracy)
-        # Close writer client.
-        writer.set_terminated()
-
-
-def load_feature(feature_files):
-    feature_files = [f"../data/feature/{filename}.pkl" for filename in feature_files]
-    data = []
-    for filepath in feature_files:
-        feature = load_pickle(filepath)
-        data.append(feature)
-    feature = pd.concat(data, axis=1)
-    return feature
-
-
-def run_train(Trainer, X, y, params=None, train_params=None):
-    # cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=42)
-    cv_trainer = CrossValidationTrainer(cv, Trainer)
-    cv_trainer.fit(
-        X=X,
-        y=y,
-    )
-    models = cv_trainer.get_models()
-    oof = cv_trainer.get_oof()
-
-    if "Sklearn" not in Trainer.__class__.__name__:
-        (name, mean_importance, std_importance) = cv_trainer.get_importance(
-            max_feature=50
-        )
-        importance_fig = plot_importance(name, mean_importance, std_importance)
-    else:
-        importance_fig = plt.figure()
-
-    return models, oof, importance_fig
+        # writer.log_param("LR_params", config.LogisticRegressionParams.params)
+        # writer.log_metric("LR_Accuracy", lr_accuracy)
+        # writer.log_artifact("../data/working/lr_models.pkl")
+        # # Rndom Forest
+        # writer.log_param("RF_params", config.RandomForestParams.params)
+        # writer.log_metric("RF_Accuracy", rf_accuracy)
+        # writer.log_artifact("../data/working/rf_models.pkl")
+        # # LightGBM
+        # writer.log_param(
+        #     "LGBM_params",
+        #     {
+        #         "params": config.LightgbmParams.params,
+        #         "train_params": config.LightgbmParams.train_params,
+        #     },
+        # )
+        # writer.log_metric("LGBM_Accuracy", lgbm_accuracy)
+        # writer.log_artifact("../data/working/lgbm_models.pkl")
+        # writer.log_figure(lgbm_importance_fig, "lgbm_importance.png")
+        # lgbm_importance_fig.savefig("../data/working/lgbm_importance.png")
+        # # XGBoost
+        # writer.log_param(
+        #     "XGB_params",
+        #     {
+        #         "params": config.XGBoostPrams.params,
+        #         "train_params": config.XGBoostPrams.train_params,
+        #     },
+        # )
+        # writer.log_metric("XGB_Accuracy", xgb_accuracy)
+        # writer.log_artifact("../data/working/xgb_models.pkl")
+        # writer.log_figure(xgb_importance_fig, "xgb_importance.png")
+        # xgb_importance_fig.savefig("../data/working/xgb_importance.png")
+        # # Ensemble
+        # writer.log_metric("Ensemble_Accuracy", ensemble_accuracy)
+        # # Close writer client.
+        # writer.set_terminated()
 
 
 if __name__ == "__main__":
-    with timer("Train"):
+    with timer("Time of Train Processing"):
         main()

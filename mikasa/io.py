@@ -1,6 +1,10 @@
 import os
 import pickle
 
+import pandas as pd
+
+from typing import List
+
 
 def load_pickle(filepath, verbose: bool = True):
     if verbose:
@@ -52,3 +56,12 @@ def save_cache(filepath, use_cache=False):
         return run_func
 
     return _acept_func
+
+
+def load_feature(feature_files: List):
+    data = []
+    for filepath in feature_files:
+        feature = load_pickle(filepath)
+        data.append(feature)
+    feature = pd.concat(data, axis=1)
+    return feature
