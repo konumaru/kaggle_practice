@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import accuracy_score
 
-DEBUG = True
+DEBUG = False
 
 SEED = 42
 NUM_SEED = 3
@@ -9,10 +9,9 @@ NUM_SEED = 3
 
 class MLflowConfig:
     experiment_name = "Titanic, LGBM"
-    run_name = "Add cabin_feature"
+    run_name = "From Add cabin_feature"
     experiment_note = """
-    Frist experiment.
-    Train model with raw feature and cabin_feature.
+    Convert one-hot to ordinal encode
     """
 
 
