@@ -1,25 +1,14 @@
-# kaggle_practice
+# mikasa
 
+## Titanic - Machine Learning from Disaster
+- Metric: Accuracy
 
-## GCP Enviroment
-
-
-# Titanic - Machine Learning from Disaster
-
-
-## Definitions
-- Metric: AUC, Accuracy
-
-## Solution
-### Feature
+### Solution
+#### Feature
 - raw_data
 
-### Model
-- Ensenble Model
-  - LogisticRegression, RandomForest, LightGBM, XGBoost
+#### Model
+- 3 RSA, 3-Fold CV, LightGBM
 
-### Prediction
-
-prediction = 0.0 * LR + 0.1 * RF + 0.3 * LGBM + 0.6 * XGBoost
 
 ## Reference
