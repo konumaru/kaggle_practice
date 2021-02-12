@@ -11,17 +11,19 @@ class MLflowConfig:
     experiment_name = "Titanic, LGBM"
     run_name = "First Running."
     experiment_note = """
+    Frist experiment.
+    Train model with raw feature.
     """
 
 
 class FeatureList:
     features = [
         "raw_feature",
-        "age_rank",
-        "cabin_feature",
-        "family_feature",
-        "fare_rank",
-        "name_feature",
+        # "age_rank",
+        # "cabin_feature",
+        # "family_feature",
+        # "fare_rank",
+        # "name_feature",
     ]
 
 

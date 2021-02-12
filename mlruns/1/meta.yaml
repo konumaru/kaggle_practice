@@ -1,0 +1,4 @@
+artifact_location: /Users/rui/Documents/repositories/mikasa/mlruns/1
+experiment_id: '1'
+lifecycle_stage: active
+name: Titanic, LGBM
