@@ -19,10 +19,8 @@ dump_dir = "../data/titanic/test_feature/"
 def raw_feature(data: pd.DataFrame):
     # Label encoding.
     data["Sex"] = data["Sex"].map({"female": 0, "male": 1})
-    # One-hot encoding
-    data = add_dummies(data, "Pclass")
     data["Embarked"].fillna("missing", inplace=True)
-    data = add_dummies(data, "Embarked")
+    data["Embarked"] = data["Embarked"].map({"C": 0, "Q": 1, "S": 2, "missing": 3})
     # Fill null with average.
     data["Age"].fillna(30, inplace=True)
     data["Fare"].fillna(33, inplace=True)
@@ -32,9 +30,16 @@ def raw_feature(data: pd.DataFrame):
 
     data["Fare_per_person"] = data.Fare / np.mean(data.SibSp + data.Parch + 1)
 
-    use_cols = ["Sex", "SibSp", "Parch", "Age", "Fare", "Fare_per_person"]
-    use_cols += list(data.columns[data.columns.str.contains("Pclass")])
-    use_cols += list(data.columns[data.columns.str.contains("Embarked")])
+    use_cols = [
+        "Sex",
+        "SibSp",
+        "Parch",
+        "Age",
+        "Fare",
+        "Fare_per_person",
+        "Pclass",
+        "Embarked",
+    ]
     return data[use_cols]
 
 
@@ -45,8 +50,7 @@ def cabin_feature(data: pd.DataFrame):
 
     cabin_head_map = {s: i for i, s in enumerate("ABCDEFGH")}
     data["Cabin_head"] = data["Cabin_head"].map(cabin_head_map)
-    data = add_dummies(data, "Cabin_head")
-    return data[list(data.columns[data.columns.str.contains("Cabin_head")])]
+    return data[["Cabin_head"]]
 
 
 def create_features(data: pd.DataFrame):
@@ -55,12 +59,7 @@ def create_features(data: pd.DataFrame):
 
 
 def lgbm_predict(models, data):
-    preds = [
-        m.predict(
-            data, num_iteration=m.best_iteration, predict_disable_shape_check=True
-        )
-        for m in models
-    ]
+    preds = [m.predict(data, num_iteration=m.best_iteration) for m in models]
     return np.array(preds)
 
 
