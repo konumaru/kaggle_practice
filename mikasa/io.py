@@ -3,24 +3,24 @@ import pickle
 
 import pandas as pd
 
-from typing import List
+from typing import List, Any
 
 
-def load_pickle(filepath, verbose: bool = True):
+def load_pickle(filepath: str, verbose: bool = True):
     if verbose:
         print(f"Load pickle from {filepath}")
     with open(filepath, "rb") as file:
         return pickle.load(file)
 
 
-def dump_pickle(data, filepath, verbose: bool = True):
+def dump_pickle(data: Any, filepath: str, verbose: bool = True):
     if verbose:
         print(f"Dump pickle to {filepath}")
     with open(filepath, "wb") as file:
         pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def save_cache(filepath, use_cache=False):
+def save_cache(filepath: str, use_cache: bool = False):
     """Save return dataframe with pickle.
 
     Parameters

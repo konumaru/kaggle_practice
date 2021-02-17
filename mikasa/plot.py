@@ -40,7 +40,7 @@ def plot_importance(
     return fig
 
 
-def plot_roc_curve(y_true, y_score, filepath, figsize=(7, 6)):
+def plot_roc_curve(y_true, y_proba, filepath, figsize=(7, 6)):
     """Plot the roc curve.
     Parameters
     ----------
@@ -54,7 +54,7 @@ def plot_roc_curve(y_true, y_score, filepath, figsize=(7, 6)):
     -------
     None
     """
-    fpr, tpr, thresholds = roc_curve(y_true, y_score)
+    fpr, tpr, thresholds = roc_curve(y_true, y_proba)
     auc = metrics.auc(fpr, tpr)
 
     plt.figure(figsize=figsize)

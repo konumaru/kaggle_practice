@@ -8,5 +8,9 @@
         "--ignore=E24,W504,E401,E402,E501,F401,F841",
         "--verbose"
     ],
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "black",
+    "python.autoComplete.extraPaths": [
+        "./mikasa",
+        "./tests/trainer"
+    ],
 }
