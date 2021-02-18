@@ -16,10 +16,8 @@ def load_classification_dataset():
         n_clusters_per_class=1,
         n_classes=2,
     )
-
-    _X, X_test, _Y, y_test = train_test_split(X, Y, test_size=0.2)
-    X_train, X_valid, y_train, y_valid = train_test_split(_X, _Y, test_size=0.2)
-    return (X_train, X_valid, X_test, y_train, y_valid, y_test)
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
+    return X_train, X_test, y_train, y_test
 
 
 @pytest.fixture
@@ -35,10 +33,5 @@ def load_regression_dataset():
         n_informative=10,
         n_targets=1,
     )
-
-    _X, X_test, _Y, y_test = train_test_split(X, Y, test_size=0.2)
-    X_train, X_valid, y_train, y_valid = train_test_split(_X, _Y, test_size=0.2)
-
-    assert X.shape[1] == X_train.shape[1] == X_valid.shape[1] == X_test.shape[1]
-    assert Y.shape[1] == y_train.shape[1] == y_valid.shape[1] == y_test.shape[1]
-    return (X_train, X_valid, X_test, y_train, y_valid, y_test)
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
+    return X_train, X_test, y_train, y_test
