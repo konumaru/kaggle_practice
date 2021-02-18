@@ -126,13 +126,15 @@ class CatBoostTrainer(BaseTrainer):
     def fit(
         self,
         X_train: pd.DataFrame,
-        y_train: pd.DataFrame,
         X_valid: pd.DataFrame,
+        y_train: pd.DataFrame,
         y_valid: pd.DataFrame,
-        categorical_feature: List[str] = None,
         weight_train: pd.DataFrame = None,
         weight_valid: pd.DataFrame = None,
+        categorical_feature: List[str] = None,
+        random_state: int = None,
     ):
+        self.model.set_params(random_seed=random_state)
         train_pool = catboost.Pool(
             X_train,
             label=y_train,
@@ -156,6 +158,9 @@ class CatBoostTrainer(BaseTrainer):
         pred = self.model.predict(data)
         return pred
 
+    def get_model(self):
+        return self.model
+
     def get_importance(self):
         """Return feature importance.
 
@@ -167,43 +172,3 @@ class CatBoostTrainer(BaseTrainer):
         importance = self.model.feature_importances_
         feature_name = self.model.feature_names_
         return dict(zip(feature_name, importance))
-
-    def get_model(self):
-        return self.model
-
-    def set_seed(self, seed):
-        self.params["random_seed"] = seed
-
-
-def main():
-    from sklearn.datasets import make_classification
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import roc_auc_score
-
-    X, Y = make_classification(
-        random_state=12,
-        n_samples=10_000,
-        n_features=100,
-        n_redundant=3,
-        n_informative=20,
-        n_clusters_per_class=1,
-        n_classes=2,
-    )
-
-    X, X_test, Y, y_test = train_test_split(X, Y, test_size=0.2, stratify=Y)
-    X_train, X_valid, y_train, y_valid = train_test_split(
-        X, Y, test_size=0.2, stratify=Y
-    )
-
-    trainer = CatBoostTrainer({}, {"verbose": 100})
-    trainer.fit(X_train, y_train, X_valid, y_valid)
-    pred = trainer.predict(X_test)
-
-    print(trainer.get_importance())
-
-    auc = roc_auc_score(y_test, pred)
-    print("AUC is", auc)
-
-
-if __name__ == "__main__":
-    main()

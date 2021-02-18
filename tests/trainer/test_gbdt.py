@@ -145,3 +145,79 @@ def test_lgbm_fixed_seed(load_regression_dataset):
 
     assert (y_zero_seed_pred == _y_zero_seed_pred).all()
     assert (y_zero_seed_pred != y_one_seed_pred).all()
+
+
+def test_cat_regresser(load_regression_dataset):
+    from sklearn.model_selection import train_test_split
+
+    X_train, X_test, y_train, y_test = load_regression_dataset
+    X_train, X_valid, y_train, y_valid = train_test_split(
+        X_train, y_train, test_size=0.2, random_state=42
+    )
+
+    trainer = CatBoostTrainer(
+        params={"loss_function": "MAE", "verbose": 0},
+        train_params={},
+    )
+    trainer.fit(X_train, X_valid, y_train, y_valid)
+    y_pred = trainer.predict(X_test)
+    assert y_test.shape == y_pred.shape
+
+    importance = trainer.get_importance()
+    assert type(importance) == dict
+
+
+def test_cat_classifier(load_classification_dataset):
+    from sklearn.model_selection import train_test_split
+
+    X_train, X_test, y_train, y_test = load_classification_dataset
+    X_train, X_valid, y_train, y_valid = train_test_split(
+        X_train, y_train, test_size=0.2, random_state=42
+    )
+
+    trainer = CatBoostTrainer(
+        params={"loss_function": "Logloss", "verbose": 0},
+        train_params={},
+    )
+    trainer.fit(X_train, X_valid, y_train, y_valid)
+    y_pred = trainer.predict(X_test)
+    assert y_test.shape == y_pred.shape
+
+    importance = trainer.get_importance()
+    assert type(importance) == dict
+
+
+def test_cat_fixed_seed(load_regression_dataset):
+    from sklearn.model_selection import train_test_split
+
+    X_train, X_test, y_train, y_test = load_regression_dataset
+    X_train, X_valid, y_train, y_valid = train_test_split(
+        X_train, y_train, test_size=0.2
+    )
+
+    def fit_and_prediction(random_state: int = None):
+        trainer = CatBoostTrainer(
+            params={
+                "iterations": 100,
+                "loss_function": "MAE",
+                "sampling_frequency": "PerTreeLevel",
+                "subsample": 0.7,
+                "colsample_bylevel": 0.7,
+                "save_snapshot": False,
+                "verbose": 0,
+            },
+            train_params={},
+        )
+        trainer.fit(X_train, X_valid, y_train, y_valid, random_state=random_state)
+        pred = trainer.predict(X_test)
+        return pred
+
+    # Seed = 0
+    y_zero_seed_pred = fit_and_prediction(random_state=0)
+    # Seed = 1
+    y_one_seed_pred = fit_and_prediction(random_state=1)
+    # Seed = 0
+    _y_zero_seed_pred = fit_and_prediction(random_state=0)
+
+    assert (y_zero_seed_pred == _y_zero_seed_pred).all()
+    assert (y_zero_seed_pred != y_one_seed_pred).all()
