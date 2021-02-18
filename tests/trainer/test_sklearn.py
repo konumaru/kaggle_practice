@@ -1,12 +1,11 @@
-import numpy as np
-from sklearn import metrics
-
 from mikasa.trainer.base import SklearnRegressionTrainer
 from mikasa.trainer.base import SklearnClassificationTrainer
+
 from .testconf import load_classification_dataset, load_regression_dataset
 
 
 def test_sklearn_regression_trainer(load_regression_dataset):
+    from sklearn import metrics
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import Ridge, LinearRegression
 
@@ -28,6 +27,7 @@ def test_sklearn_regression_trainer(load_regression_dataset):
 
 
 def test_sklearn_classification_trainer(load_classification_dataset):
+    from sklearn import metrics
     from sklearn.svm import SVC
     from sklearn.linear_model import LogisticRegression
     from sklearn.ensemble import RandomForestClassifier

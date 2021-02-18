@@ -11,7 +11,7 @@ from .base import BaseTrainer
 
 
 class XGBTrainer(BaseTrainer):
-    def __init__(self, params, train_params):
+    def __init__(self, params: Dict = {}, train_params: Dict = {}):
         self.model = None
         self.params = params
         self.train_params = train_params
@@ -19,13 +19,15 @@ class XGBTrainer(BaseTrainer):
     def fit(
         self,
         X_train: pd.DataFrame,
-        y_train: pd.DataFrame,
         X_valid: pd.DataFrame,
+        y_train: pd.DataFrame,
         y_valid: pd.DataFrame,
-        categorical_feature: List[str] = None,
         weight_train: pd.DataFrame = None,
         weight_valid: pd.DataFrame = None,
+        categorical_feature: List[str] = None,
+        random_state: int = None,
     ):
+        self.params["seed"] = random_state
         train_dataset = xgb.DMatrix(X_train, label=y_train, weight=weight_train)
         valid_dataset = xgb.DMatrix(X_valid, label=y_valid, weight=weight_valid)
 
@@ -42,7 +44,10 @@ class XGBTrainer(BaseTrainer):
         )
         return pred
 
-    def get_importance(self):
+    def get_model(self):
+        return self.model
+
+    def get_importance(self) -> Dict:
         """Return feature importance.
 
         Returns
@@ -51,12 +56,6 @@ class XGBTrainer(BaseTrainer):
             Dictionary of feature name, feature importance.
         """
         return self.model.get_score(importance_type="gain")
-
-    def get_model(self):
-        return self.model
-
-    def set_seed(self, seed):
-        self.params["seed"] = seed
 
 
 class LGBMTrainer(BaseTrainer):
