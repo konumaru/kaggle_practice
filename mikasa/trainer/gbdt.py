@@ -67,13 +67,15 @@ class LGBMTrainer(BaseTrainer):
     def fit(
         self,
         X_train: pd.DataFrame,
-        y_train: pd.DataFrame,
         X_valid: pd.DataFrame,
+        y_train: pd.DataFrame,
         y_valid: pd.DataFrame,
-        categorical_feature: List[str] = None,
         weight_train: pd.DataFrame = None,
         weight_valid: pd.DataFrame = None,
+        categorical_feature: List[str] = None,
+        random_state: int = None,
     ):
+        self.params["seed"] = random_state
         train_data = lgb.Dataset(
             X_train,
             label=y_train,
@@ -97,6 +99,9 @@ class LGBMTrainer(BaseTrainer):
         pred = self.model.predict(data, num_iteration=self.model.best_iteration)
         return pred
 
+    def get_model(self):
+        return self.model
+
     def get_importance(self):
         """Return feature importance.
 
@@ -110,12 +115,6 @@ class LGBMTrainer(BaseTrainer):
         )
         feature_name = self.model.feature_name()
         return dict(zip(feature_name, importance))
-
-    def get_model(self):
-        return self.model
-
-    def set_seed(self, seed):
-        self.params["seed"] = seed
 
 
 class CatBoostTrainer(BaseTrainer):
