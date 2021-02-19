@@ -84,8 +84,8 @@ def test_lgbm_regresser(load_regression_dataset):
     )
 
     trainer = LGBMTrainer(
-        params={"objective": "regression", "metric": "rmse", "verbosity": 0},
-        train_params={},
+        params={"objective": "regression", "metric": "rmse", "verbosity": -1},
+        train_params={"verbose_eval": False},
     )
     trainer.fit(X_train, X_valid, y_train, y_valid)
     y_pred = trainer.predict(X_test)
@@ -104,8 +104,8 @@ def test_lgbm_classifier(load_classification_dataset):
     )
 
     trainer = LGBMTrainer(
-        params={"objective": "binary", "metric": "auc", "verbosity": 0},
-        train_params={},
+        params={"objective": "binary", "metric": "auc", "verbosity": -1},
+        train_params={"verbose_eval": False},
     )
     trainer.fit(X_train, X_valid, y_train, y_valid)
     y_pred = trainer.predict(X_test)
@@ -129,8 +129,9 @@ def test_lgbm_fixed_seed(load_regression_dataset):
                 "objective": "regression",
                 "metric": "rmse",
                 "feature_fraction": 0.7,
+                "verbosity": -1,
             },
-            train_params={},
+            train_params={"verbose_eval": False},
         )
         trainer.fit(X_train, X_valid, y_train, y_valid, random_state=random_state)
         pred = trainer.predict(X_test)
