@@ -36,7 +36,7 @@ def test_sklearn_classification_trainer(load_classification_dataset):
 
     models = [
         SVC(probability=True),
-        LogisticRegression(),
+        LogisticRegression(solver="sag"),
         RandomForestClassifier(n_estimators=10),
     ]
     for model in models:
