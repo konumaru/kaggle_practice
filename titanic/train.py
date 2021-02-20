@@ -18,7 +18,7 @@ from mikasa.io import load_pickle, dump_pickle, load_feature
 
 from mikasa.trainer.gbdt import LGBMTrainer
 from mikasa.trainer.base import SklearnRegressionTrainer
-from mikasa.trainer.cross_validation import RSACrossValidationTrainer
+from mikasa.trainer.cross_validation import RSACVTrainer
 from mikasa.ensemble import SimpleAgerageEnsember
 
 from mikasa.plot import plot_importance
@@ -27,16 +27,15 @@ from mikasa.mlflow_writer import MlflowWriter
 
 def run_train(model_name, base_trainer, X, y):
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=config.SEED)
-    trainer = RSACrossValidationTrainer(cv, base_trainer, seed=config.SEED)
-    trainer.fit(X=X, y=y, num_seed=config.NUM_SEED)
+    trainer = RSACVTrainer(cv, base_trainer)
+    trainer.fit(X=X, y=y, random_state=config.SEED, num_seed=config.NUM_SEED)
     # Save model.
-    models = trainer.get_models()
+    models = trainer.get_model()
     dump_pickle(models, f"../data/titanic/model/{model_name}_models.pkl")
     # Evaluation by cv.
-    oof = trainer.get_oof()
-    is_usage_oof = np.logical_not(np.isnan(oof))
-    oof = np.where(oof > 0.5, 1, 0)
-    metric = accuracy_score(y[is_usage_oof], oof[is_usage_oof])
+    oof = np.where(trainer.get_cv_oof() > 0.5, 1, 0)
+    target = trainer.get_cv_targets()
+    metric = accuracy_score(target, oof)
     return trainer, metric
 
 

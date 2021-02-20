@@ -1,0 +1,15 @@
+artifact_uri: /Users/rui/Documents/repositories/mikasa/mlruns/1/2215aae2eb514c839548f8d0b4f31d73/artifacts
+end_time: 1613717308220
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+name: ''
+run_id: 2215aae2eb514c839548f8d0b4f31d73
+run_uuid: 2215aae2eb514c839548f8d0b4f31d73
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1613717308206
+status: 3
+tags: []
+user_id: unknown

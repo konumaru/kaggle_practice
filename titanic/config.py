@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import accuracy_score
 
-DEBUG = False
+DEBUG = True
 
 SEED = 42
 NUM_SEED = 3
